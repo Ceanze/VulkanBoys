@@ -126,6 +126,7 @@ void Application::init()
 	m_pParticleEmitterHandler->toggleComputationDevice();
 
 	//Set renderers to renderhandler
+	m_pRenderingHandler->setParticleEmitterHandler(m_pParticleEmitterHandler);
 	//m_pRenderingHandler->setParticleRenderer(m_pParticleRenderer);
 	//m_pRenderingHandler->setImguiRenderer(m_pImgui);
 
