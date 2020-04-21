@@ -356,7 +356,7 @@ void ParticleEmitterHandlerVK::updateGPU(float dt)
 	PushConstant pushConstant = {dt, m_CollisionsEnabled ? 1 : 0};
 	m_ppCommandBuffers[m_CurrentFrame]->pushConstants(m_pPipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(PushConstant), (const void*)&pushConstant);
 
-	bool transferOwnerships = queueFamilyIndices.graphicsFamily.value() != queueFamilyIndices.computeFamily.value();
+	bool transferOwnerships = m_RenderingEnabled && queueFamilyIndices.graphicsFamily.value() != queueFamilyIndices.computeFamily.value();
 
 	RenderingHandlerVK* pRenderingHandler = reinterpret_cast<RenderingHandlerVK*>(m_pRenderingHandler);
 	GBufferVK* pGBuffer = pRenderingHandler->getGBuffer();
@@ -373,7 +373,8 @@ void ParticleEmitterHandlerVK::updateGPU(float dt)
 				VK_IMAGE_ASPECT_DEPTH_BIT);
 	}
 
-	m_ppCommandBuffers[m_CurrentFrame]->transitionImageLayout(pGBuffer->getDepthImage(), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0, 1, 0, 1, VK_IMAGE_ASPECT_DEPTH_BIT);
+	VkImageLayout expectedDepthLayout = m_RenderingEnabled ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_UNDEFINED;
+	m_ppCommandBuffers[m_CurrentFrame]->transitionImageLayout(pGBuffer->getDepthImage(), expectedDepthLayout, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0, 1, 0, 1, VK_IMAGE_ASPECT_DEPTH_BIT);
 
 	m_ppCommandBuffers[m_CurrentFrame]->bindDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, m_pPipelineLayout, 1, 1, &m_pDescriptorSetCommon, 0, nullptr);
 

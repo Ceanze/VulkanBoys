@@ -115,8 +115,8 @@ void Application::init()
 	m_pImgui->init();
 	m_pWindow->addEventHandler(m_pImgui);
 
-	m_pParticleRenderer = m_pContext->createParticleRenderer(m_pRenderingHandler);
-	m_pParticleRenderer->init();
+	// m_pParticleRenderer = m_pContext->createParticleRenderer(m_pRenderingHandler);
+	// m_pParticleRenderer->init();
 
 	//Create particlehandler
 	m_pParticleEmitterHandler = m_pContext->createParticleEmitterHandler(RENDERING_ENABLED);
