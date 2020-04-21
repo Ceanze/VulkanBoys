@@ -28,8 +28,9 @@
 #define DEPTH_BINDING			5
 #define NORMAL_MAP_BINDING  	6
 
-ParticleEmitterHandlerVK::ParticleEmitterHandlerVK()
-	:m_pDescriptorPool(nullptr),
+ParticleEmitterHandlerVK::ParticleEmitterHandlerVK(bool renderingEnabled)
+	:ParticleEmitterHandler(renderingEnabled),
+	m_pDescriptorPool(nullptr),
 	m_pDescriptorSetLayoutPerEmitter(nullptr),
 	m_pDescriptorSetLayoutCommon(nullptr),
 	m_pDescriptorSetCommon(nullptr),
@@ -201,6 +202,10 @@ void ParticleEmitterHandlerVK::toggleComputationDevice()
 
 void ParticleEmitterHandlerVK::releaseFromGraphics(BufferVK* pBuffer, CommandBufferVK* pCommandBuffer)
 {
+	if (!m_RenderingEnabled) {
+		return;
+	}
+
 	GraphicsContextVK* pGraphicsContext = reinterpret_cast<GraphicsContextVK*>(m_pGraphicsContext);
 	DeviceVK* pDevice = pGraphicsContext->getDevice();
 	const QueueFamilyIndices& queueFamilyIndices = pDevice->getQueueFamilyIndices();
@@ -217,6 +222,10 @@ void ParticleEmitterHandlerVK::releaseFromGraphics(BufferVK* pBuffer, CommandBuf
 
 void ParticleEmitterHandlerVK::releaseFromCompute(BufferVK* pBuffer, CommandBufferVK* pCommandBuffer)
 {
+	if (!m_RenderingEnabled) {
+		return;
+	}
+
 	GraphicsContextVK* pGraphicsContext = reinterpret_cast<GraphicsContextVK*>(m_pGraphicsContext);
 	DeviceVK* pDevice = pGraphicsContext->getDevice();
 	const QueueFamilyIndices& queueFamilyIndices = pDevice->getQueueFamilyIndices();
@@ -233,6 +242,10 @@ void ParticleEmitterHandlerVK::releaseFromCompute(BufferVK* pBuffer, CommandBuff
 
 void ParticleEmitterHandlerVK::acquireForGraphics(BufferVK* pBuffer, CommandBufferVK* pCommandBuffer)
 {
+	if (!m_RenderingEnabled) {
+		return;
+	}
+
 	GraphicsContextVK* pGraphicsContext = reinterpret_cast<GraphicsContextVK*>(m_pGraphicsContext);
 	DeviceVK* pDevice = pGraphicsContext->getDevice();
 	const QueueFamilyIndices& queueFamilyIndices = pDevice->getQueueFamilyIndices();
@@ -249,6 +262,10 @@ void ParticleEmitterHandlerVK::acquireForGraphics(BufferVK* pBuffer, CommandBuff
 
 void ParticleEmitterHandlerVK::acquireForCompute(BufferVK* pBuffer, CommandBufferVK* pCommandBuffer)
 {
+	if (!m_RenderingEnabled) {
+		return;
+	}
+
 	GraphicsContextVK* pGraphicsContext = reinterpret_cast<GraphicsContextVK*>(m_pGraphicsContext);
 	DeviceVK* pDevice = pGraphicsContext->getDevice();
 	const QueueFamilyIndices& queueFamilyIndices = pDevice->getQueueFamilyIndices();
@@ -279,10 +296,10 @@ void ParticleEmitterHandlerVK::initializeEmitter(ParticleEmitter* pEmitter)
 	BufferVK* pAgesBuffer = reinterpret_cast<BufferVK*>(pEmitter->getAgesBuffer());
 	BufferVK* pEmitterBuffer = reinterpret_cast<BufferVK*>(pEmitter->getEmitterBuffer());
 
-	pEmitterDescriptorSet->writeStorageBufferDescriptor(pPositionsBuffer, 								POSITIONS_BINDING);
-	pEmitterDescriptorSet->writeStorageBufferDescriptor(pVelocitiesBuffer, 								VELOCITIES_BINDING);
-	pEmitterDescriptorSet->writeStorageBufferDescriptor(pAgesBuffer, 									AGES_BINDING);
-	pEmitterDescriptorSet->writeUniformBufferDescriptor(pEmitterBuffer, 								EMITTER_BINDING);
+	pEmitterDescriptorSet->writeStorageBufferDescriptor(pPositionsBuffer,	POSITIONS_BINDING);
+	pEmitterDescriptorSet->writeStorageBufferDescriptor(pVelocitiesBuffer,	VELOCITIES_BINDING);
+	pEmitterDescriptorSet->writeStorageBufferDescriptor(pAgesBuffer,		AGES_BINDING);
+	pEmitterDescriptorSet->writeUniformBufferDescriptor(pEmitterBuffer,		EMITTER_BINDING);
 
 	pEmitter->setDescriptorSetCompute(pEmitterDescriptorSet);
 

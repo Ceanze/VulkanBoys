@@ -42,6 +42,7 @@
 
 Application* Application::s_pInstance = nullptr;
 
+constexpr bool	RENDERING_ENABLED = false;
 constexpr bool	FORCE_RAY_TRACING_OFF	= true;
 constexpr bool	HIGH_RESOLUTION_SPHERE	= false;
 constexpr float CAMERA_PAN_LENGTH		= 10.0f;
@@ -118,8 +119,11 @@ void Application::init()
 	m_pParticleRenderer->init();
 
 	//Create particlehandler
-	m_pParticleEmitterHandler = m_pContext->createParticleEmitterHandler();
+	m_pParticleEmitterHandler = m_pContext->createParticleEmitterHandler(RENDERING_ENABLED);
 	m_pParticleEmitterHandler->initialize(m_pContext, m_pRenderingHandler, &m_Camera);
+
+	// Switch to GPU
+	m_pParticleEmitterHandler->toggleComputationDevice();
 
 	//Set renderers to renderhandler
 	//m_pRenderingHandler->setParticleRenderer(m_pParticleRenderer);
@@ -384,10 +388,6 @@ void Application::update(double dt)
 
 	m_pScene->updateCamera(m_Camera);
 	m_pScene->updateDebugParameters();
-
-	m_pScene->updateMeshesAndGraphicsObjects();
-
-	m_pRenderingHandler->onSceneUpdated(m_pScene);
 }
 
 void Application::renderUI(double dt)

@@ -15,7 +15,7 @@ class Texture2DVK;
 class ParticleEmitterHandler
 {
 public:
-    ParticleEmitterHandler();
+    ParticleEmitterHandler(bool renderingEnabled);
     virtual ~ParticleEmitterHandler();
 
     virtual void update(float dt) = 0;
@@ -44,6 +44,8 @@ protected:
     const Camera* m_pCamera;
 
     std::vector<ParticleEmitter*> m_ParticleEmitters;
+
+    bool m_RenderingEnabled;
 
     // Whether to use the GPU or the CPU for updating particle data
     bool m_GPUComputed;

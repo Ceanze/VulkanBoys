@@ -26,7 +26,7 @@ struct ParticleStorage;
 class ParticleEmitterHandlerVK : public ParticleEmitterHandler
 {
 public:
-    ParticleEmitterHandlerVK();
+    ParticleEmitterHandlerVK(bool renderingEnabled);
     ~ParticleEmitterHandlerVK();
 
     virtual void update(float dt) override;
