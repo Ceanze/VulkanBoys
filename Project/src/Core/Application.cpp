@@ -57,6 +57,7 @@ Application::Application()
 	m_Camera(),
 	m_IsRunning(false),
 	m_UpdateCamera(false),
+	m_pParticleRenderer(nullptr),
 	m_pParticleTexture(nullptr),
 	m_pParticleEmitterHandler(nullptr),
 	m_NewEmitterInfo(),
@@ -417,12 +418,6 @@ void Application::renderUI(double dt)
 			const char* btnLabel = m_pParticleEmitterHandler->gpuComputed() ? "GPU" : "CPU";
 			if (ImGui::Button(btnLabel, ImVec2(40, 25))) {
 				m_pParticleEmitterHandler->toggleComputationDevice();
-			}
-
-			ImGui::Text("Collisions");
-			const char* btnLabelCollisions = m_pParticleEmitterHandler->collisionsEnabled() ? "On" : "Off";
-			if (ImGui::Button(btnLabelCollisions)) {
-				m_pParticleEmitterHandler->toggleCollisions();
 			}
 
 			std::vector<ParticleEmitter*> particleEmitters = m_pParticleEmitterHandler->getParticleEmitters();

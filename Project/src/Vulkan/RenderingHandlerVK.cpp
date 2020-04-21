@@ -294,10 +294,6 @@ void RenderingHandlerVK::onWindowResize(uint32_t width, uint32_t height)
 	m_pGBuffer->resize(width, height);
 
 	createBackBuffers();
-
-	if (m_pParticleEmitterHandler) {
-		m_pParticleEmitterHandler->onWindowResize();
-	}
 }
 
 void RenderingHandlerVK::onSceneUpdated(IScene* pScene)

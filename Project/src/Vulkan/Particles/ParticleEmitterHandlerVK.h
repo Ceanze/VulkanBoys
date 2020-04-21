@@ -35,8 +35,6 @@ public:
 
     virtual bool initializeGPUCompute() override;
 
-    virtual void onWindowResize() override;
-
     virtual void toggleComputationDevice() override;
 
     void releaseFromGraphics(BufferVK* pBuffer, CommandBufferVK* pCommandBuffer);
@@ -47,7 +45,6 @@ public:
 private:
     struct PushConstant {
 		float dt;
-		int performCollisions;
 	};
 
     // Initializes an emitter and prepares its buffers for computing or rendering
@@ -64,8 +61,6 @@ private:
     bool createPipeline();
     void createProfiler();
 
-    void writeDescriptorSetCommon();
-
 private:
     CommandBufferVK* m_ppCommandBuffers[MAX_FRAMES_IN_FLIGHT];
     CommandPoolVK* m_ppCommandPools[MAX_FRAMES_IN_FLIGHT];
@@ -75,8 +70,6 @@ private:
 
     DescriptorPoolVK* m_pDescriptorPool;
     DescriptorSetLayoutVK* m_pDescriptorSetLayoutPerEmitter;
-    DescriptorSetLayoutVK* m_pDescriptorSetLayoutCommon;
-    DescriptorSetVK* m_pDescriptorSetCommon;
 
     PipelineLayoutVK* m_pPipelineLayout;
     PipelineVK* m_pPipeline;

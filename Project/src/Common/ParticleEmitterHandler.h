@@ -30,13 +30,8 @@ public:
 
     std::vector<ParticleEmitter*>& getParticleEmitters() { return m_ParticleEmitters; }
 
-    virtual void onWindowResize() = 0;
-
     bool gpuComputed() const { return m_GPUComputed; }
     virtual void toggleComputationDevice() = 0;
-
-    bool collisionsEnabled() const { return m_CollisionsEnabled; }
-    void toggleCollisions() { m_CollisionsEnabled = !m_CollisionsEnabled; }
 
 protected:
     IGraphicsContext* m_pGraphicsContext;
@@ -49,7 +44,6 @@ protected:
 
     // Whether to use the GPU or the CPU for updating particle data
     bool m_GPUComputed;
-    bool m_CollisionsEnabled;
 
 private:
     virtual void initializeEmitter(ParticleEmitter* pEmitter) = 0;

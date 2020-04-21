@@ -7,8 +7,7 @@
 ParticleEmitterHandler::ParticleEmitterHandler(bool renderingEnabled)
     :m_RenderingEnabled(renderingEnabled),
     m_pGraphicsContext(nullptr),
-    m_GPUComputed(false),
-    m_CollisionsEnabled(false)
+    m_GPUComputed(false)
 {}
 
 ParticleEmitterHandler::~ParticleEmitterHandler()
