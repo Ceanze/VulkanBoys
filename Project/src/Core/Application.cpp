@@ -11,7 +11,6 @@
 #include "Common/IShader.h"
 #include "Common/ISampler.h"
 #include "Common/IScene.h"
-#include "Common/IMesh.h"
 #include "Common/IRenderer.h"
 #include "Common/IShader.h"
 #include "Common/ITexture2D.h"
@@ -43,7 +42,7 @@
 
 Application* Application::s_pInstance = nullptr;
 
-constexpr bool	FORCE_RAY_TRACING_OFF	= false;
+constexpr bool	FORCE_RAY_TRACING_OFF	= true;
 constexpr bool	HIGH_RESOLUTION_SPHERE	= false;
 constexpr float CAMERA_PAN_LENGTH		= 10.0f;
 
@@ -51,14 +50,8 @@ Application::Application()
 	: m_pWindow(nullptr),
 	m_pContext(nullptr),
 	m_pRenderingHandler(nullptr),
-	m_pMeshRenderer(nullptr),
-	m_pShadowMapRenderer(nullptr),
-	m_pRayTracingRenderer(nullptr),
-	m_pVolumetricLightRenderer(nullptr),
 	m_pImgui(nullptr),
 	m_pScene(nullptr),
-	m_pGunMesh(nullptr),
-	m_pGunAlbedo(nullptr),
 	m_pInputHandler(nullptr),
 	m_Camera(),
 	m_IsRunning(false),
@@ -68,10 +61,6 @@ Application::Application()
 	m_NewEmitterInfo(),
 	m_CurrentEmitterIdx(0),
 	m_CreatingEmitter(false),
-	m_pCameraPositionSpline(nullptr),
-	m_pCameraDirectionSpline(nullptr),
-	m_CameraSplineTimer(0.0f),
-	m_CameraSplineEnabled(false),
 	m_KeyInputEnabled(false)
 {
 	ASSERT(s_pInstance == nullptr);
@@ -119,106 +108,24 @@ void Application::init()
 
 	m_pRenderingHandler->setScene(m_pScene);
 
-	TaskDispatcher::execute([this]
-		{
-			m_pScene->loadFromFile("assets/sponza/", "sponza.obj");
-		});
-
-	//Setup lights
-	LightSetup& lightSetup = m_pScene->getLightSetup();
-	lightSetup.addPointLight(PointLight(glm::vec3( 0.0f, 4.0f, 0.0f), glm::vec4(100.0f)));
-	lightSetup.addPointLight(PointLight(glm::vec3( 0.0f, 4.0f, 0.0f), glm::vec4(100.0f)));
-	lightSetup.addPointLight(PointLight(glm::vec3( 0.0f, 4.0f, 0.0f), glm::vec4(100.0f)));
-	lightSetup.addPointLight(PointLight(glm::vec3( 0.0f, 4.0f, 0.0f), glm::vec4(100.0f)));
-
-	VolumetricLightSettings volumetricLightSettings = {
-		4.2f, 	// Scatter amount
-		0.2f 	// Particle G
-	};
-	glm::vec3 sunDirection = glm::normalize(glm::vec3(-0.6f, -0.78f, -0.14f));
-	lightSetup.setDirectionalLight(DirectionalLight(volumetricLightSettings, sunDirection, {0.6f, 0.45f, 0.2f, 1.0f}));
-
 	// Setup renderers
 	//Setup Imgui
 	m_pImgui = m_pContext->createImgui();
 	m_pImgui->init();
 	m_pWindow->addEventHandler(m_pImgui);
 
-	m_pMeshRenderer = m_pContext->createMeshRenderer(m_pRenderingHandler);
-	m_pMeshRenderer->init();
-
-	m_pShadowMapRenderer = m_pContext->createShadowMapRenderer(m_pRenderingHandler);
-	m_pShadowMapRenderer->init();
-
 	m_pParticleRenderer = m_pContext->createParticleRenderer(m_pRenderingHandler);
 	m_pParticleRenderer->init();
-
-	if (m_pContext->isRayTracingEnabled())
-	{
-		m_pRayTracingRenderer = m_pContext->createRayTracingRenderer(m_pRenderingHandler);
-		m_pRayTracingRenderer->init();
-	}
 
 	//Create particlehandler
 	m_pParticleEmitterHandler = m_pContext->createParticleEmitterHandler();
 	m_pParticleEmitterHandler->initialize(m_pContext, m_pRenderingHandler, &m_Camera);
 
-	// Create volumetric light renderer
-	m_pVolumetricLightRenderer = m_pContext->createVolumetricLightRenderer(m_pRenderingHandler, &m_pScene->getLightSetup(), m_pImgui);
-	m_pVolumetricLightRenderer->init();
-
 	//Set renderers to renderhandler
-	m_pRenderingHandler->setMeshRenderer(m_pMeshRenderer);
-	m_pRenderingHandler->setShadowMapRenderer(m_pShadowMapRenderer);
-	m_pRenderingHandler->setParticleEmitterHandler(m_pParticleEmitterHandler);
-	m_pRenderingHandler->setParticleRenderer(m_pParticleRenderer);
-	m_pRenderingHandler->setVolumetricLightRenderer(m_pVolumetricLightRenderer);
-	m_pRenderingHandler->setImguiRenderer(m_pImgui);
-
-	if (m_pContext->isRayTracingEnabled())
-	{
-		m_pRenderingHandler->setRayTracer(m_pRayTracingRenderer);
-	}
+	//m_pRenderingHandler->setParticleRenderer(m_pParticleRenderer);
+	//m_pRenderingHandler->setImguiRenderer(m_pImgui);
 
 	m_pRenderingHandler->setClearColor(0.0f, 0.0f, 0.0f);
-
-	//Load resources
-	ITexture2D* pPanorama = m_pContext->createTexture2D();
-	TaskDispatcher::execute([&]
-		{
-			pPanorama->initFromFile("assets/textures/arches.hdr", ETextureFormat::FORMAT_R32G32B32A32_FLOAT, false);
-			m_pSkybox = m_pRenderingHandler->generateTextureCube(pPanorama, ETextureFormat::FORMAT_R16G16B16A16_FLOAT, 2048, 1);
-		});
-
-	m_pGunMesh = m_pContext->createMesh();
-	TaskDispatcher::execute([&]
-		{
-			m_pGunMesh->initFromFile("assets/meshes/gun.obj");
-		});
-
-	m_pGunAlbedo = m_pContext->createTexture2D();
-	TaskDispatcher::execute([this]
-		{
-			m_pGunAlbedo->initFromFile("assets/textures/gunAlbedo.tga", ETextureFormat::FORMAT_R8G8B8A8_UNORM);
-		});
-
-	m_pGunNormal = m_pContext->createTexture2D();
-	TaskDispatcher::execute([this]
-		{
-			m_pGunNormal->initFromFile("assets/textures/gunNormal.tga", ETextureFormat::FORMAT_R8G8B8A8_UNORM);
-		});
-
-	m_pGunMetallic = m_pContext->createTexture2D();
-	TaskDispatcher::execute([this]
-		{
-			m_pGunMetallic->initFromFile("assets/textures/gunMetallic.tga", ETextureFormat::FORMAT_R8G8B8A8_UNORM);
-		});
-
-	m_pGunRoughness = m_pContext->createTexture2D();
-	TaskDispatcher::execute([this]
-		{
-			m_pGunRoughness->initFromFile("assets/textures/gunRoughness.tga", ETextureFormat::FORMAT_R8G8B8A8_UNORM);
-		});
 
 	// Setup particles
 	m_pParticleTexture = m_pContext->createTexture2D();
@@ -243,24 +150,6 @@ void Application::init()
 	emitterInfo.position.x = -emitterInfo.position.x;
 	m_pParticleEmitterHandler->createEmitter(emitterInfo);
 
-	//We can set the pointer to the material even if loading happens on another thread
-	m_GunMaterial.setAlbedo(glm::vec4(1.0f));
-	m_GunMaterial.setAmbientOcclusion(1.0f);
-	m_GunMaterial.setMetallic(1.0f);
-	m_GunMaterial.setRoughness(1.0f);
-	m_GunMaterial.setAlbedoMap(m_pGunAlbedo);
-	m_GunMaterial.setNormalMap(m_pGunNormal);
-	m_GunMaterial.setMetallicMap(m_pGunMetallic);
-	m_GunMaterial.setRoughnessMap(m_pGunRoughness);
-
-	SamplerParams samplerParams = {};
-	samplerParams.MinFilter = VK_FILTER_LINEAR;
-	samplerParams.MagFilter = VK_FILTER_LINEAR;
-	samplerParams.WrapModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	samplerParams.WrapModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-
-	m_GunMaterial.createSampler(m_pContext, samplerParams);
-
 	//Setup camera
 	m_Camera.setDirection(glm::vec3(0.0f, 0.0f, 1.0f));
 	m_Camera.setPosition(glm::vec3(0.0f, 1.0f, -3.0f));
@@ -268,65 +157,9 @@ void Application::init()
 	m_Camera.update();
 
 	TaskDispatcher::waitForTasks();
-
-	glm::mat4 scale = glm::scale(glm::vec3(0.75f));
-	m_GraphicsIndex0 = m_pScene->submitGraphicsObject(m_pGunMesh, &m_GunMaterial, glm::translate(glm::mat4(1.0f), glm::vec3( 0.0f, 1.0f, 0.1f)) * scale);
-	m_GraphicsIndex1 = m_pScene->submitGraphicsObject(m_pGunMesh, &m_GunMaterial, glm::translate(glm::mat4(1.0f), glm::vec3( 1.5f, 1.0f, 0.1f)) * scale);
-	m_GraphicsIndex2 = m_pScene->submitGraphicsObject(m_pGunMesh, &m_GunMaterial, glm::translate(glm::mat4(1.0f), glm::vec3(-1.5f, 1.0f, 0.1f)) * scale);
-
-	m_pRenderingHandler->setSkybox(m_pSkybox);
 	m_pWindow->show();
-
-	SAFEDELETE(pPanorama);
-
 	m_pScene->finalize();
 	m_pRenderingHandler->onSceneUpdated(m_pScene);
-
-	std::vector<glm::vec3> positionControlPoints
-	{
-		glm::vec3(-4.0f,  1.0f,  0.45f),
-		glm::vec3( 5.0f,  1.0f,  0.0f),
-
-		glm::vec3( 5.0f,  1.0f,  2.0f),
-		glm::vec3(-5.0f,  1.0f,  2.0f),
-
-		glm::vec3(-5.0f,  1.5f, -0.75f),
-
-		glm::vec3( 5.0f,  3.0f,  0.55f),
-
-		glm::vec3( 5.0f,  3.0f,  -2.5f),
-		glm::vec3(-5.0f,  3.0f,  -2.5f),
-
-		glm::vec3(-5.0f,  3.0f,  0.35f),
-		glm::vec3( 3.0f,  5.0f,  0.35f),
-
-		glm::vec3( 3.0f,  5.0f, -0.85f),
-
-		glm::vec3(-4.0f,  1.0f, -0.85f)
-	};
-
-
-	m_pCameraPositionSpline = DBG_NEW LoopingUniformCRSpline<glm::vec3, float>(positionControlPoints);
-
-	std::vector<glm::vec3> directionControlPoints
-	{
-		glm::vec3(0.0f),
-		glm::vec3(0.0f),
-		glm::vec3(0.0f),
-		glm::vec3(0.0f),
-		glm::vec3(0.0f),
-		glm::vec3(0.0f),
-		glm::vec3(0.0f),
-		glm::vec3(0.0f),
-		glm::vec3(0.0f, -2.0f,  0.0f),
-		glm::vec3(0.0f, -2.0f,  0.0f),
-		glm::vec3(0.0f, -1.0f,  0.0f),
-		glm::vec3(0.0f)
-	};
-
-	m_pCameraDirectionSpline = DBG_NEW LoopingUniformCRSpline<glm::vec3, float>(directionControlPoints);
-	m_CameraSplineTimer = 0.0f;
-	m_CameraSplineEnabled = false;
 }
 
 void Application::run()
@@ -350,8 +183,8 @@ void Application::run()
 		if (m_pWindow->hasFocus())
 		{
 			update(seconds);
-			renderUI(seconds);
-			render(seconds);
+			//renderUI(seconds);
+			//render(seconds);
 		}
 		else
 		{
@@ -368,22 +201,10 @@ void Application::release()
 
 	m_pContext->sync();
 
-	m_GunMaterial.release();
-
-	SAFEDELETE(m_pSkybox);
-	SAFEDELETE(m_pGunRoughness);
-	SAFEDELETE(m_pGunMetallic);
-	SAFEDELETE(m_pGunNormal);
-	SAFEDELETE(m_pGunAlbedo);
-	SAFEDELETE(m_pGunMesh);
 	SAFEDELETE(m_pRenderingHandler);
-	SAFEDELETE(m_pMeshRenderer);
-	SAFEDELETE(m_pShadowMapRenderer);
-	SAFEDELETE(m_pRayTracingRenderer);
 	SAFEDELETE(m_pParticleRenderer);
 	SAFEDELETE(m_pParticleTexture);
 	SAFEDELETE(m_pParticleEmitterHandler);
-	SAFEDELETE(m_pVolumetricLightRenderer);
 	SAFEDELETE(m_pImgui);
 	SAFEDELETE(m_pScene);
 
@@ -393,9 +214,6 @@ void Application::release()
 	Input::setInputHandler(nullptr);
 
 	SAFEDELETE(m_pWindow);
-
-	SAFEDELETE(m_pCameraDirectionSpline);
-	SAFEDELETE(m_pCameraPositionSpline);
 
 	TaskDispatcher::release();
 
@@ -553,27 +371,6 @@ void Application::update(double dt)
 		m_TestParameters.AverageFrametime = m_TestParameters.FrameTimeSum / m_TestParameters.FrameCount;
 		m_TestParameters.WorstFrametime = deltaTimeMS > m_TestParameters.WorstFrametime ? deltaTimeMS : m_TestParameters.WorstFrametime;
 		m_TestParameters.BestFrametime = deltaTimeMS < m_TestParameters.BestFrametime ? deltaTimeMS : m_TestParameters.BestFrametime;
-
-		auto& interpolatedPositionPT = m_pCameraPositionSpline->getTangent(m_CameraSplineTimer);
-		glm::vec3 position = interpolatedPositionPT.position;
-		glm::vec3 heading = interpolatedPositionPT.tangent;
-		glm::vec3 direction = m_pCameraDirectionSpline->getPosition(m_CameraSplineTimer);
-
-		m_CameraSplineTimer += (float)dt / (glm::max(glm::length(heading), 0.0001f));
-
-		m_Camera.setPosition(position);
-		m_Camera.setDirection(normalize(glm::normalize(heading) + direction));
-
-		if (m_CameraSplineTimer >= m_pCameraPositionSpline->getMaxT())
-		{
-			m_TestParameters.CurrentRound++;
-			m_CameraSplineTimer = 0.0f;
-
-			if (m_TestParameters.CurrentRound >= m_TestParameters.NumRounds)
-			{
-				testFinished();
-			}
-		}
 	}
 
 	m_Camera.update();
@@ -584,12 +381,6 @@ void Application::update(double dt)
 	}
 
 	m_pParticleEmitterHandler->update((float)dt);
-
-	static glm::mat4 rotation = glm::mat4(1.0f);
-	rotation = glm::rotate(rotation, glm::radians(30.0f * float(dt)), glm::vec3(0.0f, 1.0f, 0.0f));
-
-	const glm::mat4 scale = glm::scale(glm::vec3(0.75f));
-	m_pScene->updateGraphicsObjectTransform(m_GraphicsIndex0, glm::translate(glm::mat4(1.0f), glm::vec3( 0.0f, 1.0f, 0.1f)) * rotation * scale);
 
 	m_pScene->updateCamera(m_Camera);
 	m_pScene->updateDebugParameters();
@@ -605,7 +396,6 @@ void Application::renderUI(double dt)
 
 	if (m_ApplicationParameters.IsDirty)
 	{
-		m_pRenderingHandler->setRayTracingResolutionDenominator(m_ApplicationParameters.RayTracingResolutionDenominator);
 		m_ApplicationParameters.IsDirty = false;
 	}
 
@@ -744,26 +534,10 @@ void Application::renderUI(double dt)
 		ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_FirstUseEver);
 		if (ImGui::Begin("Profiler", NULL))
 		{
-			//TODO: If the renderinghandler have all renderers/handlers, why are we calling their draw UI functions should this not be done by the renderinghandler
 			m_pParticleEmitterHandler->drawProfilerUI();
 			m_pRenderingHandler->drawProfilerUI();
 		}
 		ImGui::End();
-
-		if (m_pVolumetricLightRenderer) {
-			m_pVolumetricLightRenderer->renderUI();
-		}
-
-		if (m_pContext->isRayTracingEnabled())
-		{
-			// Draw Ray Tracing UI
-			ImGui::SetNextWindowSize(ImVec2(430, 450), ImGuiCond_FirstUseEver);
-			if (ImGui::Begin("Ray Tracer", NULL))
-			{
-				m_pRayTracingRenderer->renderUI();
-			}
-			ImGui::End();
-		}
 
 		// Draw Scene UI
 		m_pScene->renderUI();
@@ -791,20 +565,12 @@ void Application::renderUI(double dt)
 
 			ImGui::NewLine();
 
-			//Graphical Parameters
-
-			m_ApplicationParameters.IsDirty = m_ApplicationParameters.IsDirty || ImGui::SliderInt("Ray Tracing Res. Denom.", &m_ApplicationParameters.RayTracingResolutionDenominator, 1, 8);
-
-			ImGui::NewLine();
-
 			//Test Parameters
 			ImGui::InputText("Test Name", m_TestParameters.TestName, 256);
 			ImGui::SliderInt("Number of Test Rounds", &m_TestParameters.NumRounds, 1, 5);
 
 			if (ImGui::Button("Start Test"))
 			{
-				m_CameraSplineTimer = 0.0f;
-
 				m_TestParameters.Running = true;
 				m_TestParameters.FrameTimeSum = 0.0f;
 				m_TestParameters.FrameCount = 0.0f;
