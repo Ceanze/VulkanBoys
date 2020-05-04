@@ -30,7 +30,8 @@ ParticleEmitter::ParticleEmitter(const ParticleEmitterInfo& emitterInfo)
     m_pPositionsBuffer(nullptr),
     m_pVelocitiesBuffer(nullptr),
     m_pAgesBuffer(nullptr),
-    m_pEmitterBuffer(nullptr)
+    m_pEmitterBuffer(nullptr),
+    m_pProfiler(nullptr)
 {
     for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         m_ppCommandPools[i] = nullptr;
@@ -50,6 +51,7 @@ ParticleEmitter::~ParticleEmitter()
     SAFEDELETE(m_pVelocitiesBuffer);
     SAFEDELETE(m_pAgesBuffer);
     SAFEDELETE(m_pEmitterBuffer);
+    SAFEDELETE(m_pProfiler);
 }
 
 bool ParticleEmitter::initialize(IGraphicsContext* pGraphicsContext)
@@ -60,6 +62,8 @@ bool ParticleEmitter::initialize(IGraphicsContext* pGraphicsContext)
     if (!createCommandBuffers(pGraphicsContext)) {
         return false;
     }
+
+    createProfiler(pGraphicsContext);
 
     return createBuffers(pGraphicsContext);
 }
@@ -229,6 +233,14 @@ bool ParticleEmitter::createCommandBuffers(IGraphicsContext* pGraphicsContext)
 	}
 
 	return true;
+}
+
+void ParticleEmitter::createProfiler(IGraphicsContext* pGraphicsContext)
+{
+	GraphicsContextVK* pGraphicsContextVK = reinterpret_cast<GraphicsContextVK*>(pGraphicsContext);
+    DeviceVK* pDevice = pGraphicsContextVK->getDevice();
+
+	m_pProfiler = DBG_NEW ProfilerVK("Particles Update", pDevice);
 }
 
 void ParticleEmitter::ageEmitter(float dt)

@@ -34,8 +34,7 @@ ParticleEmitterHandlerVK::ParticleEmitterHandlerVK(bool renderingEnabled)
 	m_pCommandPoolGraphics(nullptr),
 	m_pGBufferSampler(nullptr),
 	m_WorkGroupSize(0),
-	m_CurrentFrame(0),
-	m_pProfiler(nullptr)
+	m_CurrentFrame(0)
 {
     for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         m_ppCommandPools[i] = nullptr;
@@ -54,8 +53,6 @@ ParticleEmitterHandlerVK::~ParticleEmitterHandlerVK()
 	SAFEDELETE(m_pPipelineLayout);
 	SAFEDELETE(m_pPipeline);
 	SAFEDELETE(m_pCommandPoolGraphics);
-
-	SAFEDELETE(m_pProfiler);
 }
 
 void ParticleEmitterHandlerVK::update(float dt)
@@ -97,11 +94,7 @@ void ParticleEmitterHandlerVK::updateRenderingBuffers(RenderingHandler* pRenderi
 }
 
 void ParticleEmitterHandlerVK::drawProfilerUI()
-{
-	if (m_GPUComputed) {
-		m_pProfiler->drawResults();
-	}
-}
+{}
 
 bool ParticleEmitterHandlerVK::initializeGPUCompute()
 {
@@ -120,8 +113,6 @@ bool ParticleEmitterHandlerVK::initializeGPUCompute()
 	if (!createPipeline()) {
 		return false;
 	}
-
-	createProfiler();
 
 	return true;
 }
@@ -297,9 +288,7 @@ void ParticleEmitterHandlerVK::updateGPU(float dt)
 {
 	for (ParticleEmitter* pEmitter : m_ParticleEmitters) {
 		CommandBufferVK* pCommandBuffer = pEmitter->getCommandBuffer(m_CurrentFrame);
-		CommandPoolVK* pCommandPool = pEmitter->getCommandPool(m_CurrentFrame);
-
-		beginUpdateFrame(pEmitter, pCommandBuffer, pCommandPool);
+		beginUpdateFrame(pEmitter);
 
 		// Update push-constant
 		PushConstant pushConstant = {dt};
@@ -313,23 +302,25 @@ void ParticleEmitterHandlerVK::updateGPU(float dt)
 		uint32_t particleCount = pEmitter->getParticleCount();
 		glm::u32vec3 workGroupSize(1 + particleCount / m_WorkGroupSize, 1, 1);
 
-		m_pProfiler->beginTimestamp(&m_TimestampDispatch);
 		pCommandBuffer->dispatch(workGroupSize);
-		m_pProfiler->endTimestamp(&m_TimestampDispatch);
 
-		endUpdateFrame(pCommandBuffer);
+		endUpdateFrame(pEmitter);
     }
 }
 
-void ParticleEmitterHandlerVK::beginUpdateFrame(ParticleEmitter* pEmitter, CommandBufferVK* pCommandBuffer, CommandPoolVK* pCommandPool)
+void ParticleEmitterHandlerVK::beginUpdateFrame(ParticleEmitter* pEmitter)
 {
+	CommandBufferVK* pCommandBuffer = pEmitter->getCommandBuffer(m_CurrentFrame);
+	CommandPoolVK* pCommandPool		= pEmitter->getCommandPool(m_CurrentFrame);
+	ProfilerVK* pProfiler			= pEmitter->getProfiler();
+
 	pCommandBuffer->reset(true);
 	pCommandPool->reset();
 
 	pCommandBuffer->begin(nullptr, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-	m_pProfiler->reset(m_CurrentFrame, pCommandBuffer);
-	m_pProfiler->beginFrame(pCommandBuffer);
+	pProfiler->reset(m_CurrentFrame, pCommandBuffer);
+	pProfiler->beginFrame(pCommandBuffer);
 
 	pCommandBuffer->bindPipeline(m_pPipeline);
 
@@ -345,9 +336,11 @@ void ParticleEmitterHandlerVK::beginUpdateFrame(ParticleEmitter* pEmitter, Comma
 	}
 }
 
-void ParticleEmitterHandlerVK::endUpdateFrame(CommandBufferVK* pCommandBuffer)
+void ParticleEmitterHandlerVK::endUpdateFrame(ParticleEmitter* pEmitter)
 {
-	m_pProfiler->endFrame();
+	CommandBufferVK* pCommandBuffer = pEmitter->getCommandBuffer(m_CurrentFrame);
+	ProfilerVK* pProfiler			= pEmitter->getProfiler();
+	pProfiler->endFrame();
 
 	pCommandBuffer->end();
 
@@ -459,14 +452,4 @@ bool ParticleEmitterHandlerVK::createPipeline()
 
 	SAFEDELETE(pComputeShader);
 	return true;
-}
-
-void ParticleEmitterHandlerVK::createProfiler()
-{
-	GraphicsContextVK* pGraphicsContext = reinterpret_cast<GraphicsContextVK*>(m_pGraphicsContext);
-    DeviceVK* pDevice = pGraphicsContext->getDevice();
-
-	m_pProfiler = DBG_NEW ProfilerVK("Particles Update", pDevice);
-
-	m_pProfiler->initTimestamp(&m_TimestampDispatch, "Dispatch");
 }

@@ -52,14 +52,13 @@ private:
 
     void updateGPU(float dt);
 
-    void beginUpdateFrame(ParticleEmitter* pEmitter, CommandBufferVK* pCommandBuffer, CommandPoolVK* pCommandPool);
-    void endUpdateFrame(CommandBufferVK* pCommandBuffer);
+    void beginUpdateFrame(ParticleEmitter* pEmitter);
+    void endUpdateFrame(ParticleEmitter* pEmitter);
 
     bool createCommandPoolAndBuffers();
     bool createSamplers();
     bool createPipelineLayout();
     bool createPipeline();
-    void createProfiler();
 
 private:
     CommandPoolVK* m_ppCommandPools[MAX_FRAMES_IN_FLIGHT];
@@ -79,7 +78,4 @@ private:
     uint32_t m_WorkGroupSize;
 
     uint32_t m_CurrentFrame;
-
-    ProfilerVK* m_pProfiler;
-    Timestamp m_TimestampDispatch;
 };

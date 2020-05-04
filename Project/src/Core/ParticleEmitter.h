@@ -5,6 +5,7 @@
 #include "glm/glm.hpp"
 
 #include "Common/IGraphicsContext.h"
+#include "Vulkan/ProfilerVK.h"
 #include "Vulkan/VulkanCommon.h"
 
 #include <random>
@@ -52,8 +53,9 @@ public:
     void update(float dt);
     void updateGPU(float dt);
 
-    CommandBufferVK* getCommandBuffer(uint32_t frameIndex) { return m_ppCommandBuffers[frameIndex]; }
-    CommandPoolVK* getCommandPool(uint32_t frameIndex) { return m_ppCommandPools[frameIndex]; }
+    CommandBufferVK* getCommandBuffer(uint32_t frameIndex)  { return m_ppCommandBuffers[frameIndex]; }
+    CommandPoolVK* getCommandPool(uint32_t frameIndex)      { return m_ppCommandPools[frameIndex]; }
+    ProfilerVK* getProfiler()                               { return m_pProfiler; }
 
     const ParticleStorage& getParticleStorage() const { return m_ParticleStorage; }
     void createEmitterBuffer(EmitterBuffer& emitterBuffer);
@@ -93,6 +95,7 @@ public:
 private:
     bool createBuffers(IGraphicsContext* pGraphicsContext);
     bool createCommandBuffers(IGraphicsContext* pGraphicsContext);
+    void createProfiler(IGraphicsContext* pGraphicsContext);
 
     void ageEmitter(float dt);
     void moveParticles(float dt);
@@ -106,6 +109,8 @@ private:
 private:
     CommandBufferVK* m_ppCommandBuffers[MAX_FRAMES_IN_FLIGHT];
     CommandPoolVK* m_ppCommandPools[MAX_FRAMES_IN_FLIGHT];
+
+    ProfilerVK* m_pProfiler;
 
     glm::vec3 m_Position, m_Direction;
     glm::vec2 m_ParticleSize;
