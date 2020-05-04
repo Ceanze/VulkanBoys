@@ -320,6 +320,8 @@ void ParticleEmitterHandlerVK::beginUpdateFrame(ParticleEmitter* pEmitter)
 	pCommandBuffer->begin(nullptr, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
 	pProfiler->reset(m_CurrentFrame, pCommandBuffer);
+	pEmitter->saveLatestTimestamps();
+
 	pProfiler->beginFrame(pCommandBuffer);
 
 	pCommandBuffer->bindPipeline(m_pPipeline);

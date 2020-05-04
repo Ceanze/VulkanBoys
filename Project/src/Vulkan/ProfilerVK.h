@@ -24,6 +24,8 @@ public:
     ProfilerVK(const std::string& name, DeviceVK* pDevice);
     ~ProfilerVK();
 
+    void getLatestTimestamps(std::vector<uint64_t>& timestamps);
+
     void setParentProfiler(ProfilerVK* pParentProfiler);
 
     // The query pool is reset using pResetCmdBuffer

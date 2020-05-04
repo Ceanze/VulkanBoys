@@ -47,6 +47,16 @@ ProfilerVK::~ProfilerVK()
     }
 }
 
+void ProfilerVK::getLatestTimestamps(std::vector<uint64_t>& timestamps)
+{
+    if (!m_TimeResults.empty()) {
+        timestamps.resize(m_Timestamps.size() + 2);
+
+        timestamps[timestamps.size() - 2] = m_TimeResults[0];
+        timestamps.back() = m_TimeResults[1];
+    }
+}
+
 void ProfilerVK::setParentProfiler(ProfilerVK* pParentProfiler)
 {
     m_RecurseDepth = pParentProfiler->getRecurseDepth() + 1;
@@ -106,7 +116,7 @@ void ProfilerVK::writeResults()
     if (vkGetQueryPoolResults(
         m_pDevice->getDevice(), currentQueryPool,
         0, m_NextQuery,                             // First query, query count
-        (m_NextQuery + 1) * sizeof(uint64_t),             // Data size
+        (m_NextQuery + 1) * sizeof(uint64_t),       // Data size
         (void*)m_TimeResults.data(),                // Data pointer
         sizeof(uint64_t),                           // Stride
         VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WITH_AVAILABILITY_BIT/*VK_QUERY_RESULT_WAIT_BIT*/)

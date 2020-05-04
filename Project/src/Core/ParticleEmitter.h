@@ -57,6 +57,8 @@ public:
     CommandPoolVK* getCommandPool(uint32_t frameIndex)      { return m_ppCommandPools[frameIndex]; }
     ProfilerVK* getProfiler()                               { return m_pProfiler; }
 
+    void saveLatestTimestamps();
+
     const ParticleStorage& getParticleStorage() const { return m_ParticleStorage; }
     void createEmitterBuffer(EmitterBuffer& emitterBuffer);
 
@@ -111,6 +113,7 @@ private:
     CommandPoolVK* m_ppCommandPools[MAX_FRAMES_IN_FLIGHT];
 
     ProfilerVK* m_pProfiler;
+    std::vector<uint64_t> m_Timestamps;
 
     glm::vec3 m_Position, m_Direction;
     glm::vec2 m_ParticleSize;

@@ -81,6 +81,11 @@ void ParticleEmitter::updateGPU(float dt)
     // The rest is performed by the particle emitter handler
 }
 
+void ParticleEmitter::saveLatestTimestamps()
+{
+    m_pProfiler->getLatestTimestamps(m_Timestamps);
+}
+
 void ParticleEmitter::createEmitterBuffer(EmitterBuffer& emitterBuffer)
 {
     emitterBuffer.position = glm::vec4(m_Position, 1.0f);
