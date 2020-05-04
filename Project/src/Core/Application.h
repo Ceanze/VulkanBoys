@@ -119,4 +119,6 @@ private:
 
 	static constexpr uint32_t SPHERE_COUNT_DIMENSION = 8;
 	static Application* s_pInstance;
+
+	size_t m_MaxFrames, m_CurrentFrame;
 };
