@@ -3,21 +3,19 @@
 #include <cmath>
 
 bool Profiler::m_ProfileFrame = true;
-const float Profiler::m_MeasuresPerSecond = 2.0f;
-float Profiler::m_TimeSinceMeasure = 1.0f / m_MeasuresPerSecond;
+uint32_t Profiler::m_CooldownFramesRemaining = 0u;
 
-void Profiler::progressTimer(float dt)
+void Profiler::newFrame()
 {
-    if (m_TimeSinceMeasure > 1.0f / m_MeasuresPerSecond) {
+    m_ProfileFrame = false;
+
+    if (m_CooldownFramesRemaining == 0) {
         // The last frame was profiled, skip this one
-        m_ProfileFrame = false;
-
-        m_TimeSinceMeasure = std::fmod(m_TimeSinceMeasure, 1.0f / m_MeasuresPerSecond);
-    }
-
-    m_TimeSinceMeasure += dt;
-
-    if (m_TimeSinceMeasure > 1.0f / m_MeasuresPerSecond) {
-        m_ProfileFrame = true;
+        m_CooldownFramesRemaining = g_ProfilerCooldownFrames;
+    } else {
+        m_CooldownFramesRemaining -= 1;
+        if (m_CooldownFramesRemaining == 0) {
+            m_ProfileFrame = true;
+        }
     }
 }
