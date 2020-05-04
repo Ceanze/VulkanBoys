@@ -63,7 +63,8 @@ Application::Application()
 	m_NewEmitterInfo(),
 	m_CurrentEmitterIdx(0),
 	m_CreatingEmitter(false),
-	m_KeyInputEnabled(false)
+	m_KeyInputEnabled(false),
+	m_CurrentFrame(0)
 {
 	ASSERT(s_pInstance == nullptr);
 	s_pInstance = this;
@@ -78,6 +79,8 @@ void Application::init(size_t emitterCount, size_t frameCount, bool multipleQueu
 {
 	LOG("Starting application");
 	LOG("Emitters: %d, Frames: %d, Use multiple queues: %d", emitterCount, frameCount, multipleQueues);
+
+	m_MaxFrames = frameCount;
 
 	TaskDispatcher::init();
 
@@ -172,7 +175,7 @@ void Application::run()
 	//HACK to get a non-null deltatime
 	std::this_thread::sleep_for(std::chrono::milliseconds(16));
 
-	while (m_IsRunning)
+	while (m_IsRunning && m_CurrentFrame++ < m_MaxFrames)
 	{
 		lastTime	= currentTime;
 		currentTime = std::chrono::high_resolution_clock::now();
