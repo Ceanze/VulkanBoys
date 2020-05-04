@@ -46,7 +46,7 @@ public:
 
 	DECL_NO_COPY(Application);
 
-	void init();
+	void init(size_t emitterCount, size_t frameCount, bool multipleQueues);
 	void run();
 	void release();
 

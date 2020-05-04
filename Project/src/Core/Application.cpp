@@ -74,9 +74,10 @@ Application::~Application()
 	s_pInstance = nullptr;
 }
 
-void Application::init()
+void Application::init(size_t emitterCount, size_t frameCount, bool multipleQueues)
 {
 	LOG("Starting application");
+	LOG("Emitters: %d, Frames: %d, Use multiple queues: %d", emitterCount, frameCount, multipleQueues);
 
 	TaskDispatcher::init();
 
