@@ -306,7 +306,7 @@ static glm::vec4 g_Color = glm::vec4(1.0f);
 
 void Application::update(double dt)
 {
-	Profiler::progressTimer((float)dt);
+	Profiler::newFrame();
 
 	if (!m_TestParameters.Running)
 	{
