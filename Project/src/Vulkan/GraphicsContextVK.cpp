@@ -21,12 +21,13 @@
 
 #include "Core/GLFWWindow.h"
 
-GraphicsContextVK::GraphicsContextVK(IWindow* pWindow)
+GraphicsContextVK::GraphicsContextVK(IWindow* pWindow, bool useMultipleQueues)
 	: m_pWindow(pWindow),
 	m_pSwapChain(nullptr),
 	m_Device(),
 	m_Instance(),
-	m_RayTracingEnabled(false)
+	m_RayTracingEnabled(false),
+	m_UseMultipleQueues(useMultipleQueues)
 {}
 
 GraphicsContextVK::~GraphicsContextVK()
@@ -68,7 +69,7 @@ void GraphicsContextVK::init()
 	//m_Device.addOptionalExtension(VK_KHR_MAINTENANCE3_EXTENSION_NAME);
 	m_Device.addOptionalExtension(VK_NV_RAY_TRACING_EXTENSION_NAME);
 
-	m_Device.finalize(&m_Instance);
+	m_Device.finalize(&m_Instance, m_UseMultipleQueues);
 
 	//SwapChain init
 	m_pSwapChain = DBG_NEW SwapChainVK(&m_Instance, &m_Device);
