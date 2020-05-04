@@ -378,9 +378,9 @@ bool RenderingHandlerVK::createBackBuffers()
 bool RenderingHandlerVK::createCommandPoolAndBuffers()
 {
     DeviceVK* pDevice = m_pGraphicsContext->getDevice();
-    const uint32_t graphicsQueueFamilyIndex = pDevice->getQueueFamilyIndices().graphicsFamily.value();
-	const uint32_t computeQueueFamilyIndex	= pDevice->getQueueFamilyIndices().computeFamily.value();
-	const uint32_t transferQueueFamilyIndex = pDevice->getQueueFamilyIndices().transferFamily.value();
+    const uint32_t graphicsQueueFamilyIndex = pDevice->getQueueFamilyIndices().GraphicsQueues.value().FamilyIndex;
+	const uint32_t computeQueueFamilyIndex	= pDevice->getQueueFamilyIndices().ComputeQueues.value().FamilyIndex;
+	const uint32_t transferQueueFamilyIndex = pDevice->getQueueFamilyIndices().TransferQueues.value().FamilyIndex;
 
     for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
@@ -696,9 +696,9 @@ void RenderingHandlerVK::releaseBackBuffers()
 void RenderingHandlerVK::updateBuffers(SceneVK* pScene, const Camera& camera, const LightSetup& lightSetup)
 {
 	DeviceVK* pDevice = m_pGraphicsContext->getDevice();
-	const uint32_t graphicsQueueFamilyIndex = pDevice->getQueueFamilyIndices().graphicsFamily.value();
-	const uint32_t computeQueueFamilyIndex	= pDevice->getQueueFamilyIndices().computeFamily.value();
-	const uint32_t transferQueueFamilyIndex = pDevice->getQueueFamilyIndices().transferFamily.value();
+	const uint32_t graphicsQueueFamilyIndex = pDevice->getQueueFamilyIndices().GraphicsQueues.value().FamilyIndex;
+	const uint32_t computeQueueFamilyIndex	= pDevice->getQueueFamilyIndices().ComputeQueues.value().FamilyIndex;
+	const uint32_t transferQueueFamilyIndex = pDevice->getQueueFamilyIndices().TransferQueues.value().FamilyIndex;
 
 	//Transfer ownership to transfer-queue
 	constexpr uint32_t barrierCount = 4;
@@ -786,8 +786,8 @@ void RenderingHandlerVK::submitParticles()
 		m_ppGraphicsCommandBuffers[m_CurrentFrame]->releaseImageOwnership(
 			m_pGBuffer->getDepthImage(),
 			VK_ACCESS_MEMORY_READ_BIT,
-			m_pGraphicsContext->getDevice()->getQueueFamilyIndices().graphicsFamily.value(),
-			m_pGraphicsContext->getDevice()->getQueueFamilyIndices().computeFamily.value(),
+			m_pGraphicsContext->getDevice()->getQueueFamilyIndices().GraphicsQueues.value().FamilyIndex,
+			m_pGraphicsContext->getDevice()->getQueueFamilyIndices().ComputeQueues.value().FamilyIndex,
 			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
 			VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
 			VK_IMAGE_ASPECT_DEPTH_BIT);
@@ -803,8 +803,8 @@ void RenderingHandlerVK::submitParticles()
 		m_ppGraphicsCommandBuffers[m_CurrentFrame]->acquireImageOwnership(
 			m_pGBuffer->getDepthImage(),
 			VK_ACCESS_MEMORY_READ_BIT,
-			m_pGraphicsContext->getDevice()->getQueueFamilyIndices().computeFamily.value(),
-			m_pGraphicsContext->getDevice()->getQueueFamilyIndices().graphicsFamily.value(),
+			m_pGraphicsContext->getDevice()->getQueueFamilyIndices().ComputeQueues.value().FamilyIndex,
+			m_pGraphicsContext->getDevice()->getQueueFamilyIndices().GraphicsQueues.value().FamilyIndex,
 			VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
 			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
 			VK_IMAGE_ASPECT_DEPTH_BIT);

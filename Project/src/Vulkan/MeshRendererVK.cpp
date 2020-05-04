@@ -359,7 +359,7 @@ bool MeshRendererVK::generateBRDFLookUp()
 	}
 
 	DeviceVK* pDevice = m_pContext->getDevice();
-	CommandPoolVK* pCommandPool = DBG_NEW CommandPoolVK(pDevice, pDevice->getQueueFamilyIndices().computeFamily.value());
+	CommandPoolVK* pCommandPool = DBG_NEW CommandPoolVK(pDevice, pDevice->getQueueFamilyIndices().ComputeQueues.value().FamilyIndex);
 	if (!pCommandPool->init())
 	{
 		return false;
@@ -403,7 +403,7 @@ bool MeshRendererVK::createCommandPoolAndBuffers()
 {
 	DeviceVK* pDevice = m_pContext->getDevice();
 
-	const uint32_t graphicsQueueIndex = pDevice->getQueueFamilyIndices().graphicsFamily.value();
+	const uint32_t graphicsQueueIndex = pDevice->getQueueFamilyIndices().GraphicsQueues.value().FamilyIndex;
 	for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		m_ppGeometryPassPools[i] = DBG_NEW CommandPoolVK(pDevice, graphicsQueueIndex);

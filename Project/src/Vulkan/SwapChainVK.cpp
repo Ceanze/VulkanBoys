@@ -43,7 +43,7 @@ void SwapChainVK::init(IWindow* pWindow, VkFormat requestedFormat, uint32_t imag
 	//Check for presentationsupport
 	VkBool32 presentSupport = false;
 	QueueFamilyIndices familyIndices = m_pDevice->getQueueFamilyIndices();
-	vkGetPhysicalDeviceSurfaceSupportKHR(m_pDevice->getPhysicalDevice(), familyIndices.presentFamily.value(), m_Surface, &presentSupport);
+	vkGetPhysicalDeviceSurfaceSupportKHR(m_pDevice->getPhysicalDevice(), familyIndices.PresentQueues.value().FamilyIndex, m_Surface, &presentSupport);
 	if (presentSupport)
 	{
 		selectFormat(requestedFormat);

@@ -188,9 +188,9 @@ void RayTracingRendererVK::render(IScene* pScene)
 		vkCmdBindPipeline(m_ppComputeCommandBuffers[currentFrame]->getCommandBuffer(), VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, m_pRayTracingPipeline->getPipeline());
 
 		m_ppComputeCommandBuffers[currentFrame]->bindDescriptorSet(VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, m_pRayTracingPipelineLayout, 0, 1, &m_pRayTracingDescriptorSet, 0, nullptr);
-		
+
 		m_ppComputeCommandBuffers[currentFrame]->transitionImageLayout(m_pReflectionTemporalAccumulationImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL, 0, 1, 0, 1);
-		
+
 		m_pProfiler->beginTimestamp(&m_TimestampTraceRays);
 		m_ppComputeCommandBuffers[currentFrame]->traceRays(m_pRayTracingPipeline->getSBT(), m_RaysWidth, m_RaysHeight, 0);
 		m_pProfiler->endTimestamp(&m_TimestampTraceRays);
@@ -294,7 +294,7 @@ void RayTracingRendererVK::renderUI()
 
 void RayTracingRendererVK::setViewport(float, float, float, float, float, float)
 {
-	
+
 }
 
 void RayTracingRendererVK::onWindowResize(uint32_t width, uint32_t height)
@@ -383,7 +383,7 @@ void RayTracingRendererVK::setSkybox(TextureCubeVK* pSkybox)
 	m_pSkybox = pSkybox;
 
 	ImageViewVK* pSkyboxView = m_pSkybox->getImageView();
-	m_pRayTracingDescriptorSet->writeCombinedImageDescriptors(&pSkyboxView, &m_pNearestSampler, 1, RT_SKYBOX_BINDING);	
+	m_pRayTracingDescriptorSet->writeCombinedImageDescriptors(&pSkyboxView, &m_pNearestSampler, 1, RT_SKYBOX_BINDING);
 }
 
 void RayTracingRendererVK::setGBufferTextures(GBufferVK* pGBuffer)
@@ -424,7 +424,7 @@ void RayTracingRendererVK::setSceneData(IScene* pScene)
 	const BufferVK* pMaterialParametersBuffer = pVulkanScene->getMaterialParametersBuffer();
 
 	m_pRayTracingDescriptorSet->writeAccelerationStructureDescriptor(pVulkanScene->getTLAS().AccelerationStructure, RT_TLAS_BINDING);
-	
+
 	m_pRayTracingDescriptorSet->writeStorageBufferDescriptor(pVulkanScene->getCombinedVertexBuffer(), RT_COMBINED_VERTEX_BINDING);
 	m_pRayTracingDescriptorSet->writeStorageBufferDescriptor(pVulkanScene->getCombinedIndexBuffer(), RT_COMBINED_INDEX_BINDING);
 	m_pRayTracingDescriptorSet->writeStorageBufferDescriptor(pVulkanScene->getMeshIndexBuffer(), RT_MESH_INDEX_BINDING);
@@ -434,7 +434,7 @@ void RayTracingRendererVK::setSceneData(IScene* pScene)
 	m_pRayTracingDescriptorSet->writeCombinedImageDescriptors(aoMaps.data(), samplers.data(), MAX_NUM_UNIQUE_MATERIALS, RT_COMBINED_AO_BINDING);
 	m_pRayTracingDescriptorSet->writeCombinedImageDescriptors(metallicMaps.data(), samplers.data(), MAX_NUM_UNIQUE_MATERIALS, RT_COMBINED_METALLIC_BINDING);
 	m_pRayTracingDescriptorSet->writeCombinedImageDescriptors(roughnessMaps.data(), samplers.data(), MAX_NUM_UNIQUE_MATERIALS, RT_COMBINED_ROUGHNESS_BINDING);
-	
+
 	m_pRayTracingDescriptorSet->writeStorageBufferDescriptor(pMaterialParametersBuffer, RT_COMBINED_MATERIAL_PARAMETERS_BINDING);
 }
 
@@ -454,8 +454,8 @@ CommandBufferVK* RayTracingRendererVK::getComputeCommandBuffer() const
 bool RayTracingRendererVK::createCommandPoolAndBuffers()
 {
 	DeviceVK* pDevice = m_pContext->getDevice();
-	
-	const uint32_t computeQueueFamilyIndex = pDevice->getQueueFamilyIndices().computeFamily.value();
+
+	const uint32_t computeQueueFamilyIndex = pDevice->getQueueFamilyIndices().ComputeQueues.value().FamilyIndex;
 	for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		m_ppComputeCommandPools[i] = DBG_NEW CommandPoolVK(pDevice, computeQueueFamilyIndex);

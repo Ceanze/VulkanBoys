@@ -50,7 +50,7 @@ bool BufferVK::init(const BufferParams& params)
 	}
 	else
 	{
-		uint32_t queueFamilies[3] = { m_pDevice->getQueueFamilyIndices().graphicsFamily.value(), m_pDevice->getQueueFamilyIndices().computeFamily.value(), m_pDevice->getQueueFamilyIndices().transferFamily.value() };
+		uint32_t queueFamilies[3] = { m_pDevice->getQueueFamilyIndices().GraphicsQueues.value().FamilyIndex, m_pDevice->getQueueFamilyIndices().ComputeQueues.value().FamilyIndex, m_pDevice->getQueueFamilyIndices().TransferQueues.value().FamilyIndex };
 		bufferInfo.queueFamilyIndexCount	= 3;
 		bufferInfo.pQueueFamilyIndices		= queueFamilies;
 		bufferInfo.sharingMode				= VK_SHARING_MODE_CONCURRENT;

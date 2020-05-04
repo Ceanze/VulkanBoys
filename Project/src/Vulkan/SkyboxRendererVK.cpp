@@ -54,7 +54,7 @@ SkyboxRendererVK::~SkyboxRendererVK()
 	SAFEDELETE(m_pFilterCubeRenderpass);
 	SAFEDELETE(m_pFilterCubePipelineLayout);
 	SAFEDELETE(m_pFilterCubeDescriptorSetLayout);
-	
+
 	SAFEDELETE(m_pPanoramaPipeline);
 
 	SAFEDELETE(m_pIrradiancePipeline);
@@ -180,7 +180,7 @@ void SkyboxRendererVK::generateCubemapFromPanorama(TextureCubeVK* pCubemap, Text
 
 		m_ppCommandBuffers[m_CurrentFrame]->endRenderPass();
 	}
-	
+
 	m_ppCommandBuffers[m_CurrentFrame]->transitionImageLayout(pCubemap->getImage(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0, pCubemap->getMiplevels(), 0, 6);
 	m_ppCommandBuffers[m_CurrentFrame]->end();
 
@@ -359,7 +359,7 @@ void SkyboxRendererVK::prefilterEnvironmentMap(TextureCubeVK* pCubemap, TextureC
 
 bool SkyboxRendererVK::createCommandpoolsAndBuffers()
 {
-	const uint32_t queueFamilyIndex = m_pDevice->getQueueFamilyIndices().graphicsFamily.value();
+	const uint32_t queueFamilyIndex = m_pDevice->getQueueFamilyIndices().GraphicsQueues.value().FamilyIndex;
 	for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		m_ppCommandPools[i] = DBG_NEW CommandPoolVK(m_pDevice, queueFamilyIndex);

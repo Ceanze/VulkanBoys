@@ -11,21 +11,30 @@ class InstanceVK;
 class CopyHandlerVK;
 class CommandBufferVK;
 
+struct QueueIndices {
+	bool operator<(const QueueIndices& other) const {
+		return FamilyIndex < other.FamilyIndex;
+	}
+
+	uint32_t FamilyIndex;
+	uint32_t QueueCount;
+};
+
 struct QueueFamilyIndices
 {
-	std::optional<uint32_t> graphicsFamily;
-	std::optional<uint32_t> computeFamily;
-	std::optional<uint32_t> transferFamily;
-	std::optional<uint32_t> presentFamily;
+	std::optional<QueueIndices> GraphicsQueues;
+	std::optional<QueueIndices> ComputeQueues;
+	std::optional<QueueIndices> TransferQueues;
+	std::optional<QueueIndices> PresentQueues;
 
 	bool IsComplete()
 	{
-		return graphicsFamily.has_value() && computeFamily.has_value() && transferFamily.has_value() && presentFamily.has_value();
+		return GraphicsQueues.has_value() && ComputeQueues.has_value() && TransferQueues.has_value() && PresentQueues.has_value();
 	}
 };
 
 class DeviceVK
-{	
+{
 public:
 	DeviceVK();
 	~DeviceVK();
@@ -80,18 +89,26 @@ private:
 	void executeCommandBuffer(VkQueue queue, CommandBufferVK* pCommandBuffer, const VkSemaphore* pWaitSemaphore, const VkPipelineStageFlags* pWaitStages,
 		uint32_t waitSemaphoreCount, const VkSemaphore* pSignalSemaphores, uint32_t signalSemaphoreCount);
 
+	void getQueues(const char* pObjectName, const QueueIndices& queueIndices, std::vector<VkQueue>& queues);
+
 private:
-	static uint32_t getQueueFamilyIndex(VkQueueFlagBits queueFlags, const std::vector<VkQueueFamilyProperties>& queueFamilies);
-	
-private:	
+	static QueueIndices getQueueFamilyIndex(VkQueueFlagBits queueFlags, const std::vector<VkQueueFamilyProperties>& queueFamilies);
+
+private:
 	VkPhysicalDevice m_PhysicalDevice;
 	VkDevice m_Device;
 
 	QueueFamilyIndices m_DeviceQueueFamilyIndices;
-	
-	VkQueue m_GraphicsQueue;
-	VkQueue m_ComputeQueue;
-	VkQueue m_TransferQueue;
+
+	std::vector<VkQueue> m_GraphicsQueues;
+	uint32_t m_NextGraphicsQueue;
+
+	std::vector<VkQueue> m_ComputeQueues;
+	uint32_t m_NextComputeQueue;
+
+	std::vector<VkQueue> m_TransferQueues;
+	uint32_t m_NextTransferQueue;
+
 	VkQueue m_PresentQueue;
 
 	Spinlock m_ComputeLock;

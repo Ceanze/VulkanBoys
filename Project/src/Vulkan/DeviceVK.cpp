@@ -11,14 +11,17 @@
 
 #define GET_DEVICE_PROC_ADDR(device, function_name) if ((function_name = reinterpret_cast<PFN_##function_name>(vkGetDeviceProcAddr(device, #function_name))) == nullptr) { LOG("--- Vulkan: Failed to load DeviceFunction '%s'", #function_name); }
 
-DeviceVK::DeviceVK() 
+DeviceVK::DeviceVK()
 	: m_pInstance(nullptr),
 	m_PhysicalDevice(VK_NULL_HANDLE),
 	m_Device(VK_NULL_HANDLE),
-	m_GraphicsQueue(VK_NULL_HANDLE),
-	m_ComputeQueue(VK_NULL_HANDLE),
-	m_TransferQueue(VK_NULL_HANDLE),
+	m_GraphicsQueues(VK_NULL_HANDLE),
+	m_ComputeQueues(VK_NULL_HANDLE),
+	m_TransferQueues(VK_NULL_HANDLE),
 	m_PresentQueue(VK_NULL_HANDLE),
+	m_NextGraphicsQueue(0),
+	m_NextTransferQueue(0),
+	m_NextComputeQueue(0),
 	m_DeviceLimits({}),
 	m_RayTracingProperties({}),
 	m_pCopyHandler(),
@@ -42,7 +45,7 @@ DeviceVK::~DeviceVK()
 bool DeviceVK::finalize(InstanceVK* pInstance)
 {
 	m_pInstance = pInstance;
-	
+
 	if (!initPhysicalDevice())
 		return false;
 
@@ -60,12 +63,12 @@ bool DeviceVK::finalize(InstanceVK* pInstance)
 
 void DeviceVK::release()
 {
-	if (m_Device != VK_NULL_HANDLE) 
+	if (m_Device != VK_NULL_HANDLE)
 	{
 		vkDeviceWaitIdle(m_Device);
-		
+
 		SAFEDELETE(m_pCopyHandler);
-	
+
 		vkDestroyDevice(m_Device, nullptr);
 		m_Device = VK_NULL_HANDLE;
 	}
@@ -84,37 +87,46 @@ void DeviceVK::addOptionalExtension(const char* extensionName)
 void DeviceVK::executeGraphics(CommandBufferVK* pCommandBuffer, const VkSemaphore* pWaitSemaphore, const VkPipelineStageFlags* pWaitStages, uint32_t waitSemaphoreCount, const VkSemaphore* pSignalSemaphores, uint32_t signalSemaphoreCount)
 {
 	std::scoped_lock<Spinlock> lock(m_GraphicsLock);
-	executeCommandBuffer(m_GraphicsQueue, pCommandBuffer, pWaitSemaphore, pWaitStages, waitSemaphoreCount, pSignalSemaphores, signalSemaphoreCount);
+	executeCommandBuffer(m_GraphicsQueues[m_NextGraphicsQueue], pCommandBuffer, pWaitSemaphore, pWaitStages, waitSemaphoreCount, pSignalSemaphores, signalSemaphoreCount);
+	m_NextGraphicsQueue = (m_NextGraphicsQueue + 1) % m_GraphicsQueues.size();
 }
 
 void DeviceVK::executeCompute(CommandBufferVK* pCommandBuffer, const VkSemaphore* pWaitSemaphore, const VkPipelineStageFlags* pWaitStages, uint32_t waitSemaphoreCount, const VkSemaphore* pSignalSemaphores, uint32_t signalSemaphoreCount)
 {
 	std::scoped_lock<Spinlock> lock(m_ComputeLock);
-	executeCommandBuffer(m_ComputeQueue, pCommandBuffer, pWaitSemaphore, pWaitStages, waitSemaphoreCount, pSignalSemaphores, signalSemaphoreCount);
+	executeCommandBuffer(m_ComputeQueues[m_NextComputeQueue], pCommandBuffer, pWaitSemaphore, pWaitStages, waitSemaphoreCount, pSignalSemaphores, signalSemaphoreCount);
+	m_NextComputeQueue = (m_NextComputeQueue + 1) % m_ComputeQueues.size();
 }
 
 void DeviceVK::executeTransfer(CommandBufferVK* pCommandBuffer, const VkSemaphore* pWaitSemaphore, const VkPipelineStageFlags* pWaitStages, uint32_t waitSemaphoreCount, const VkSemaphore* pSignalSemaphores, uint32_t signalSemaphoreCount)
 {
 	std::scoped_lock<Spinlock> lock(m_TransferLock);
-	executeCommandBuffer(m_TransferQueue, pCommandBuffer, pWaitSemaphore, pWaitStages, waitSemaphoreCount, pSignalSemaphores, signalSemaphoreCount);
+	executeCommandBuffer(m_TransferQueues[m_NextTransferQueue], pCommandBuffer, pWaitSemaphore, pWaitStages, waitSemaphoreCount, pSignalSemaphores, signalSemaphoreCount);
+	m_NextTransferQueue = (m_NextTransferQueue + 1) % m_TransferQueues.size();
 }
 
 void DeviceVK::waitGraphics()
 {
 	std::scoped_lock<Spinlock> lock(m_GraphicsLock);
-	vkQueueWaitIdle(m_GraphicsQueue);
+	for (VkQueue queue : m_GraphicsQueues) {
+		vkQueueWaitIdle(queue);
+	}
 }
 
 void DeviceVK::waitCompute()
 {
 	std::scoped_lock<Spinlock> lock(m_ComputeLock);
-	vkQueueWaitIdle(m_ComputeQueue);
+	for (VkQueue queue : m_ComputeQueues) {
+		vkQueueWaitIdle(queue);
+	}
 }
 
 void DeviceVK::waitTransfer()
 {
 	std::scoped_lock<Spinlock> lock(m_TransferLock);
-	vkQueueWaitIdle(m_TransferQueue);
+	for (VkQueue queue : m_TransferQueues) {
+		vkQueueWaitIdle(queue);
+	}
 }
 
 void DeviceVK::executeCommandBuffer(VkQueue queue, CommandBufferVK* pCommandBuffer, const VkSemaphore* pWaitSemaphore, const VkPipelineStageFlags* pWaitStages,
@@ -138,11 +150,21 @@ void DeviceVK::executeCommandBuffer(VkQueue queue, CommandBufferVK* pCommandBuff
 	VK_CHECK_RESULT(result, "vkQueueSubmit failed");
 }
 
+void DeviceVK::getQueues(const char* pObjectName, const QueueIndices& queueIndices, std::vector<VkQueue>& queues)
+{
+	queues.resize(queueIndices.QueueCount);
+
+	for (uint32_t queueIndex = 0; queueIndex < queueIndices.QueueCount; queueIndex++) {
+		vkGetDeviceQueue(m_Device, queueIndices.FamilyIndex, queueIndex, &queues[queueIndex]);
+		setVulkanObjectName(pObjectName, (uint64_t)queues[queueIndex], VK_OBJECT_TYPE_QUEUE);
+	}
+}
+
 void DeviceVK::wait()
 {
 	VkResult result = vkDeviceWaitIdle(m_Device);
-	if (result != VK_SUCCESS) 
-	{ 
+	if (result != VK_SUCCESS)
+	{
 		LOG("vkDeviceWaitIdle failed");
 	}
 }
@@ -166,13 +188,7 @@ void DeviceVK::setVulkanObjectName(const char* pName, uint64_t objectHandle, VkO
 
 bool DeviceVK::hasUniqueQueueFamilyIndices() const
 {
-	std::set<uint32_t> familyIndices = {
-		m_DeviceQueueFamilyIndices.computeFamily.value(),
-		m_DeviceQueueFamilyIndices.graphicsFamily.value(),
-		m_DeviceQueueFamilyIndices.transferFamily.value()
-	};
-
-	return familyIndices.size() == 3;
+	return true;
 }
 
 void DeviceVK::getMaxComputeWorkGroupSize(uint32_t pWorkGroupSize[3])
@@ -224,22 +240,25 @@ bool DeviceVK::initPhysicalDevice()
 bool DeviceVK::initLogicalDevice()
 {
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-	std::set<uint32_t> uniqueQueueFamilies = 
+	std::set<QueueIndices> uniqueQueueFamilies =
 	{
-		m_DeviceQueueFamilyIndices.graphicsFamily.value(),
-		m_DeviceQueueFamilyIndices.computeFamily.value(),
-		m_DeviceQueueFamilyIndices.transferFamily.value(),
-		m_DeviceQueueFamilyIndices.presentFamily.value()
+		m_DeviceQueueFamilyIndices.GraphicsQueues.value(),
+		m_DeviceQueueFamilyIndices.ComputeQueues.value(),
+		m_DeviceQueueFamilyIndices.TransferQueues.value(),
+		m_DeviceQueueFamilyIndices.PresentQueues.value()
 	};
 
-	float queuePriority = 1.0f;
-	for (uint32_t queueFamily : uniqueQueueFamilies)
-	{
+	std::vector<std::vector<float>> queuePriorities;
+	queuePriorities.reserve(uniqueQueueFamilies.size());
+
+	for (const QueueIndices& queueIndices : uniqueQueueFamilies) {
+		queuePriorities.push_back(std::vector<float>(queueIndices.QueueCount, 1.0f));
+
 		VkDeviceQueueCreateInfo queueCreateInfo = {};
 		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		queueCreateInfo.queueFamilyIndex = queueFamily;
-		queueCreateInfo.queueCount = 1;
-		queueCreateInfo.pQueuePriorities = &queuePriority;
+		queueCreateInfo.queueFamilyIndex = queueIndices.FamilyIndex;
+		queueCreateInfo.queueCount = queueIndices.QueueCount;
+		queueCreateInfo.pQueuePriorities = queuePriorities.back().data();
 		queueCreateInfos.push_back(queueCreateInfo);
 	}
 
@@ -277,15 +296,13 @@ bool DeviceVK::initLogicalDevice()
 	}
 
 	//Retrive queues
-	vkGetDeviceQueue(m_Device, m_DeviceQueueFamilyIndices.graphicsFamily.value(), 0, &m_GraphicsQueue);
-	vkGetDeviceQueue(m_Device, m_DeviceQueueFamilyIndices.presentFamily.value(), 0, &m_PresentQueue);
-	setVulkanObjectName("GraphicsQueue", (uint64_t)m_GraphicsQueue, VK_OBJECT_TYPE_QUEUE);
-	
-	vkGetDeviceQueue(m_Device, m_DeviceQueueFamilyIndices.computeFamily.value(), 0, &m_ComputeQueue);
-	setVulkanObjectName("ComputeQueue", (uint64_t)m_ComputeQueue, VK_OBJECT_TYPE_QUEUE);
+	getQueues("Graphics Queue", m_DeviceQueueFamilyIndices.GraphicsQueues.value(), m_GraphicsQueues);
+	getQueues("Compute Queue", m_DeviceQueueFamilyIndices.ComputeQueues.value(), m_ComputeQueues);
+	getQueues("Transfer Queue", m_DeviceQueueFamilyIndices.TransferQueues.value(), m_TransferQueues);
 
-	vkGetDeviceQueue(m_Device, m_DeviceQueueFamilyIndices.transferFamily.value(), 0, &m_TransferQueue);
-	setVulkanObjectName("TransferQueue", (uint64_t)m_TransferQueue, VK_OBJECT_TYPE_QUEUE);
+	std::vector<VkQueue> presentQueue;
+	getQueues("Present Queue", m_DeviceQueueFamilyIndices.PresentQueues.value(), presentQueue);
+	m_PresentQueue = presentQueue.front();
 
 	return true;
 }
@@ -343,7 +360,7 @@ void DeviceVK::setEnabledExtensions()
 	{
 		m_ExtensionsStatus[requiredExtensions] = true;
 	}
-	
+
 	uint32_t extensionCount = 0;
 	vkEnumerateDeviceExtensionProperties(m_PhysicalDevice, nullptr, &extensionCount, nullptr);
 
@@ -374,17 +391,17 @@ void DeviceVK::setEnabledExtensions()
 QueueFamilyIndices DeviceVK::findQueueFamilies(VkPhysicalDevice physicalDevice)
 {
 	QueueFamilyIndices indices;
-	
+
 	uint32_t queueFamilyCount = 0;
 	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
 
 	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
 	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
 
-	indices.graphicsFamily	= getQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT, queueFamilies);
-	indices.computeFamily	= getQueueFamilyIndex(VK_QUEUE_COMPUTE_BIT, queueFamilies);
-	indices.transferFamily	= getQueueFamilyIndex(VK_QUEUE_TRANSFER_BIT, queueFamilies);
-	indices.presentFamily	= indices.graphicsFamily; //Assume present support at this stage
+	indices.GraphicsQueues	= getQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT, queueFamilies);
+	indices.ComputeQueues	= getQueueFamilyIndex(VK_QUEUE_COMPUTE_BIT, queueFamilies);
+	indices.TransferQueues	= getQueueFamilyIndex(VK_QUEUE_TRANSFER_BIT, queueFamilies);
+	indices.PresentQueues	= {indices.GraphicsQueues.value().FamilyIndex, 1}; //Assume present support at this stage
 
 	return indices;
 }
@@ -419,31 +436,31 @@ void DeviceVK::registerExtensionFunctions()
 	}
 }
 
-uint32_t DeviceVK::getQueueFamilyIndex(VkQueueFlagBits queueFlags, const std::vector<VkQueueFamilyProperties>& queueFamilies)
+QueueIndices DeviceVK::getQueueFamilyIndex(VkQueueFlagBits queueFlags, const std::vector<VkQueueFamilyProperties>& queueFamilies)
 {
 	if (queueFlags & VK_QUEUE_COMPUTE_BIT)
 	{
-		for (uint32_t i = 0; i < uint32_t(queueFamilies.size()); i++)
-		{
-			if ((queueFamilies[i].queueFlags & queueFlags) && ((queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0))
-				return i;
+		for (uint32_t familyIndex = 0; familyIndex < uint32_t(queueFamilies.size()); familyIndex++) {
+			if (queueFamilies[familyIndex].queueFlags & queueFlags) {
+				return {familyIndex, queueFamilies[familyIndex].queueCount};
+			}
 		}
 	}
 
 	if (queueFlags & VK_QUEUE_TRANSFER_BIT)
 	{
-		for (uint32_t i = 0; i < uint32_t(queueFamilies.size()); i++)
+		for (uint32_t familyIndex = 0; familyIndex < uint32_t(queueFamilies.size()); familyIndex++)
 		{
-			if ((queueFamilies[i].queueFlags & queueFlags) && ((queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0) && ((queueFamilies[i].queueFlags & VK_QUEUE_COMPUTE_BIT) == 0))
-				return i;
+			if ((queueFamilies[familyIndex].queueFlags & queueFlags) && ((queueFamilies[familyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0) && ((queueFamilies[familyIndex].queueFlags & VK_QUEUE_COMPUTE_BIT) == 0))
+				return {familyIndex, queueFamilies[familyIndex].queueCount};
 		}
 	}
 
-	for (uint32_t i = 0; i < uint32_t(queueFamilies.size()); i++)
+	for (uint32_t familyIndex = 0; familyIndex < uint32_t(queueFamilies.size()); familyIndex++)
 	{
-		if (queueFamilies[i].queueFlags & queueFlags)
-			return i;
+		if (queueFamilies[familyIndex].queueFlags & queueFlags)
+			return {familyIndex, queueFamilies[familyIndex].queueCount};
 	}
 
-	return UINT32_MAX;
+	return {UINT32_MAX, 0};
 }

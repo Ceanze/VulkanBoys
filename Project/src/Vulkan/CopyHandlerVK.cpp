@@ -38,13 +38,13 @@ bool CopyHandlerVK::init()
 {
 	for (uint32_t i = 0; i < MAX_COMMAND_BUFFERS; i++)
 	{
-		m_pGraphicsPool[i] = DBG_NEW CommandPoolVK(m_pDevice, m_pDevice->getQueueFamilyIndices().graphicsFamily.value());
+		m_pGraphicsPool[i] = DBG_NEW CommandPoolVK(m_pDevice, m_pDevice->getQueueFamilyIndices().GraphicsQueues.value().FamilyIndex);
 		if (!m_pGraphicsPool[i]->init())
 		{
 			return false;
 		}
 
-		m_pTransferPool[i] = DBG_NEW CommandPoolVK(m_pDevice, m_pDevice->getQueueFamilyIndices().transferFamily.value());
+		m_pTransferPool[i] = DBG_NEW CommandPoolVK(m_pDevice, m_pDevice->getQueueFamilyIndices().TransferQueues.value().FamilyIndex);
 		if (!m_pTransferPool[i]->init())
 		{
 			return false;

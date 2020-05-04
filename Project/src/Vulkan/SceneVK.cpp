@@ -379,7 +379,7 @@ bool SceneVK::init()
 
 bool SceneVK::finalize()
 {
-	m_pTempCommandPool = DBG_NEW CommandPoolVK(m_pContext->getDevice(), m_pContext->getDevice()->getQueueFamilyIndices().computeFamily.value());
+	m_pTempCommandPool = DBG_NEW CommandPoolVK(m_pContext->getDevice(), m_pContext->getDevice()->getQueueFamilyIndices().ComputeQueues.value().FamilyIndex);
 	m_pTempCommandPool->init();
 
 	m_pTempCommandBuffer = m_pTempCommandPool->allocateCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);

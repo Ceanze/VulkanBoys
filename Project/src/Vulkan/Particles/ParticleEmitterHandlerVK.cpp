@@ -202,8 +202,8 @@ void ParticleEmitterHandlerVK::releaseFromGraphics(BufferVK* pBuffer, CommandBuf
 	pCommandBuffer->releaseBufferOwnership(
 		pBuffer,
 		VK_ACCESS_SHADER_READ_BIT,
-		queueFamilyIndices.graphicsFamily.value(),
-		queueFamilyIndices.computeFamily.value(),
+		queueFamilyIndices.GraphicsQueues.value().FamilyIndex,
+		queueFamilyIndices.ComputeQueues.value().FamilyIndex,
 		VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
 		VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
 	);
@@ -222,8 +222,8 @@ void ParticleEmitterHandlerVK::releaseFromCompute(BufferVK* pBuffer, CommandBuff
 	pCommandBuffer->releaseBufferOwnership(
 		pBuffer,
 		VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-		queueFamilyIndices.computeFamily.value(),
-		queueFamilyIndices.graphicsFamily.value(),
+		queueFamilyIndices.ComputeQueues.value().FamilyIndex,
+		queueFamilyIndices.GraphicsQueues.value().FamilyIndex,
 		VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
 		VK_PIPELINE_STAGE_VERTEX_SHADER_BIT
 	);
@@ -242,8 +242,8 @@ void ParticleEmitterHandlerVK::acquireForGraphics(BufferVK* pBuffer, CommandBuff
 	pCommandBuffer->acquireBufferOwnership(
 		pBuffer,
 		VK_ACCESS_SHADER_READ_BIT,
-		queueFamilyIndices.computeFamily.value(),
-		queueFamilyIndices.graphicsFamily.value(),
+		queueFamilyIndices.ComputeQueues.value().FamilyIndex,
+		queueFamilyIndices.GraphicsQueues.value().FamilyIndex,
 		VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
 		VK_PIPELINE_STAGE_VERTEX_SHADER_BIT
 	);
@@ -262,8 +262,8 @@ void ParticleEmitterHandlerVK::acquireForCompute(BufferVK* pBuffer, CommandBuffe
 	pCommandBuffer->acquireBufferOwnership(
 		pBuffer,
 		VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-		queueFamilyIndices.graphicsFamily.value(),
-		queueFamilyIndices.computeFamily.value(),
+		queueFamilyIndices.GraphicsQueues.value().FamilyIndex,
+		queueFamilyIndices.ComputeQueues.value().FamilyIndex,
 		VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
 		VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
 	);
@@ -297,7 +297,7 @@ void ParticleEmitterHandlerVK::initializeEmitter(ParticleEmitter* pEmitter)
 	const QueueFamilyIndices& queueFamilyIndices = pDevice->getQueueFamilyIndices();
 
 	// Transfer ownership of buffers to compute queue
-	if (queueFamilyIndices.graphicsFamily.value() != queueFamilyIndices.computeFamily.value()) {
+	if (queueFamilyIndices.GraphicsQueues.value().FamilyIndex != queueFamilyIndices.ComputeQueues.value().FamilyIndex) {
 		CommandBufferVK* pTempCommandBufferGraphics = m_pCommandPoolGraphics->allocateCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 		pTempCommandBufferGraphics->reset(true);
 		pTempCommandBufferGraphics->begin(nullptr, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
@@ -345,7 +345,7 @@ void ParticleEmitterHandlerVK::updateGPU(float dt)
 	PushConstant pushConstant = {dt};
 	m_ppCommandBuffers[m_CurrentFrame]->pushConstants(m_pPipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(PushConstant), (const void*)&pushConstant);
 
-	bool transferOwnerships = m_RenderingEnabled && queueFamilyIndices.graphicsFamily.value() != queueFamilyIndices.computeFamily.value();
+	bool transferOwnerships = m_RenderingEnabled && queueFamilyIndices.GraphicsQueues.value().FamilyIndex != queueFamilyIndices.ComputeQueues.value().FamilyIndex;
 
 	for (ParticleEmitter* pEmitter : m_ParticleEmitters) {
 		pEmitter->updateGPU(dt);
@@ -421,7 +421,7 @@ bool ParticleEmitterHandlerVK::createCommandPoolAndBuffers()
     DeviceVK* pDevice = pGraphicsContext->getDevice();
 
 	const QueueFamilyIndices& queueFamilyIndices = pDevice->getQueueFamilyIndices();
-	const uint32_t computeQueueIndex = queueFamilyIndices.computeFamily.value();
+	const uint32_t computeQueueIndex = queueFamilyIndices.ComputeQueues.value().FamilyIndex;
 	for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 		m_ppCommandPools[i] = DBG_NEW CommandPoolVK(pDevice, computeQueueIndex);
 
@@ -435,7 +435,7 @@ bool ParticleEmitterHandlerVK::createCommandPoolAndBuffers()
 		}
 	}
 
-	m_pCommandPoolGraphics = DBG_NEW CommandPoolVK(pDevice, queueFamilyIndices.graphicsFamily.value());
+	m_pCommandPoolGraphics = DBG_NEW CommandPoolVK(pDevice, queueFamilyIndices.GraphicsQueues.value().FamilyIndex);
 	return m_pCommandPoolGraphics->init();
 }
 
