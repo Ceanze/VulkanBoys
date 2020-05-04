@@ -50,7 +50,7 @@ ProfilerVK::~ProfilerVK()
 void ProfilerVK::getLatestTimestamps(std::vector<uint64_t>& timestamps)
 {
     if (!m_TimeResults.empty()) {
-        timestamps.resize(m_Timestamps.size() + 2);
+        timestamps.resize(timestamps.size() + 2);
 
         timestamps[timestamps.size() - 2] = m_TimeResults[0];
         timestamps.back() = m_TimeResults[1];

@@ -10,6 +10,7 @@
 
 #include <algorithm>
 #include <math.h>
+#include <fstream>
 
 ParticleEmitter::ParticleEmitter(const ParticleEmitterInfo& emitterInfo)
     :m_Position(glm::vec4(emitterInfo.position, 0.0f)),
@@ -43,6 +44,8 @@ ParticleEmitter::ParticleEmitter(const ParticleEmitterInfo& emitterInfo)
 
 ParticleEmitter::~ParticleEmitter()
 {
+    saveTimestampsToFile();
+
     for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         SAFEDELETE(m_ppCommandPools[i]);
     }
@@ -355,4 +358,16 @@ void ParticleEmitter::resizeParticleStorage(size_t newSize)
     for (size_t i = oldSize; i < newSize; i++) {
         ages[i] = m_ParticleDuration - i * spawnRateReciprocal;
     }
+}
+
+void ParticleEmitter::saveTimestampsToFile()
+{
+    std::ofstream file;
+    file.open("results.txt", std::ios::binary | std::ios::out | std::ios::app | std::ios::ate);
+
+    for (auto& timestamp : m_Timestamps) {
+        file << timestamp;
+    }
+    
+    file.close();
 }

@@ -108,6 +108,8 @@ private:
     void createCenteringQuaternion();
     void resizeParticleStorage(size_t newSize);
 
+    void saveTimestampsToFile();
+
 private:
     CommandBufferVK* m_ppCommandBuffers[MAX_FRAMES_IN_FLIGHT];
     CommandPoolVK* m_ppCommandPools[MAX_FRAMES_IN_FLIGHT];

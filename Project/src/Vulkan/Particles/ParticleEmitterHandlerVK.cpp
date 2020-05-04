@@ -19,6 +19,8 @@
 #include "Vulkan/SamplerVK.h"
 #include "Vulkan/ShaderVK.h"
 
+#include <fstream>
+
 // Compute shader bindings
 #define POSITIONS_BINDING   	0
 #define VELOCITIES_BINDING  	1
@@ -39,6 +41,11 @@ ParticleEmitterHandlerVK::ParticleEmitterHandlerVK(bool renderingEnabled)
     for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         m_ppCommandPools[i] = nullptr;
     }
+
+	// Clear the results file
+	std::fstream file;
+	file.open("results.txt", std::ios::out | std::ios::trunc);
+	file.close();
 }
 
 ParticleEmitterHandlerVK::~ParticleEmitterHandlerVK()
