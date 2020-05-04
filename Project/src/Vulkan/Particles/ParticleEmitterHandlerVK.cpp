@@ -291,46 +291,6 @@ void ParticleEmitterHandlerVK::initializeEmitter(ParticleEmitter* pEmitter)
 	pEmitterDescriptorSet->writeUniformBufferDescriptor(pEmitterBuffer,		EMITTER_BINDING);
 
 	pEmitter->setDescriptorSetCompute(pEmitterDescriptorSet);
-
-	GraphicsContextVK* pGraphicsContext = reinterpret_cast<GraphicsContextVK*>(m_pGraphicsContext);
-	DeviceVK* pDevice = pGraphicsContext->getDevice();
-	const QueueFamilyIndices& queueFamilyIndices = pDevice->getQueueFamilyIndices();
-
-	// Transfer ownership of buffers to compute queue
-	if (queueFamilyIndices.GraphicsQueues.value().FamilyIndex != queueFamilyIndices.ComputeQueues.value().FamilyIndex) {
-		CommandBufferVK* pTempCommandBufferGraphics = m_pCommandPoolGraphics->allocateCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-		pTempCommandBufferGraphics->reset(true);
-		pTempCommandBufferGraphics->begin(nullptr, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-
-		CommandBufferVK* pTempCommandBufferCompute = m_ppCommandPools[0]->allocateCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-		pTempCommandBufferCompute->reset(true);
-		pTempCommandBufferCompute->begin(nullptr, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-
-		if (m_GPUComputed) {
-			// Release the buffer to allow the particle renderer to acquire it
-			acquireForCompute(pPositionsBuffer, pTempCommandBufferCompute);
-			releaseFromCompute(pPositionsBuffer, pTempCommandBufferCompute);
-		}
-
-		releaseFromGraphics(pVelocitiesBuffer, pTempCommandBufferGraphics);
-		releaseFromGraphics(pAgesBuffer, pTempCommandBufferGraphics);
-
-		// These only need to be acquired once, as the rendering stage does not use them
-		acquireForCompute(pVelocitiesBuffer, pTempCommandBufferCompute);
-		acquireForCompute(pAgesBuffer, pTempCommandBufferCompute);
-
-		pTempCommandBufferGraphics->end();
-		pDevice->executeGraphics(pTempCommandBufferGraphics, nullptr, nullptr, 0, nullptr, 0);
-
-		pTempCommandBufferCompute->end();
-		pDevice->executeCompute(pTempCommandBufferCompute, nullptr, nullptr, 0, nullptr, 0);
-
-		// Wait for command buffers to finish executing before deleting them
-		pTempCommandBufferGraphics->reset(true);
-		pTempCommandBufferCompute->reset(true);
-		m_pCommandPoolGraphics->freeCommandBuffer(&pTempCommandBufferGraphics);
-		m_ppCommandPools[0]->freeCommandBuffer(&pTempCommandBufferCompute);
-	}
 }
 
 void ParticleEmitterHandlerVK::updateGPU(float dt)
@@ -345,17 +305,11 @@ void ParticleEmitterHandlerVK::updateGPU(float dt)
 	PushConstant pushConstant = {dt};
 	m_ppCommandBuffers[m_CurrentFrame]->pushConstants(m_pPipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(PushConstant), (const void*)&pushConstant);
 
-	bool transferOwnerships = m_RenderingEnabled && queueFamilyIndices.GraphicsQueues.value().FamilyIndex != queueFamilyIndices.ComputeQueues.value().FamilyIndex;
-
 	for (ParticleEmitter* pEmitter : m_ParticleEmitters) {
 		pEmitter->updateGPU(dt);
 
 		// Update descriptor set
 		BufferVK* pPositionsBuffer = reinterpret_cast<BufferVK*>(pEmitter->getPositionsBuffer());
-
-		if (transferOwnerships) {
-			acquireForCompute(pPositionsBuffer, m_ppCommandBuffers[m_CurrentFrame]);
-		}
 
 		DescriptorSetVK* pDescriptorSet = reinterpret_cast<DescriptorSetVK*>(pEmitter->getDescriptorSetCompute());
 		m_ppCommandBuffers[m_CurrentFrame]->bindDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, m_pPipelineLayout, 0, 1, &pDescriptorSet, 0, nullptr);
@@ -366,10 +320,6 @@ void ParticleEmitterHandlerVK::updateGPU(float dt)
 		m_pProfiler->beginTimestamp(&m_TimestampDispatch);
 		m_ppCommandBuffers[m_CurrentFrame]->dispatch(workGroupSize);
 		m_pProfiler->endTimestamp(&m_TimestampDispatch);
-
-		if (transferOwnerships) {
-			releaseFromCompute(pPositionsBuffer, m_ppCommandBuffers[m_CurrentFrame]);
-		}
     }
 
 	endUpdateFrame();
