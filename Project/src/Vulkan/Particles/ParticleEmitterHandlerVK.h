@@ -52,8 +52,8 @@ private:
 
     void updateGPU(float dt);
 
-    void beginUpdateFrame();
-    void endUpdateFrame();
+    void beginUpdateFrame(ParticleEmitter* pEmitter, CommandBufferVK* pCommandBuffer, CommandPoolVK* pCommandPool);
+    void endUpdateFrame(CommandBufferVK* pCommandBuffer);
 
     bool createCommandPoolAndBuffers();
     bool createSamplers();
@@ -62,7 +62,6 @@ private:
     void createProfiler();
 
 private:
-    CommandBufferVK* m_ppCommandBuffers[MAX_FRAMES_IN_FLIGHT];
     CommandPoolVK* m_ppCommandPools[MAX_FRAMES_IN_FLIGHT];
 
     // Used for creating temporary graphics command buffers for initializing emitter buffers

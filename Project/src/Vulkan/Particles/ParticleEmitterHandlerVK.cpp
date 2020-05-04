@@ -295,72 +295,66 @@ void ParticleEmitterHandlerVK::initializeEmitter(ParticleEmitter* pEmitter)
 
 void ParticleEmitterHandlerVK::updateGPU(float dt)
 {
-	beginUpdateFrame();
-
-	GraphicsContextVK* pGraphicsContext = reinterpret_cast<GraphicsContextVK*>(m_pGraphicsContext);
-	DeviceVK* pDevice = pGraphicsContext->getDevice();
-	const QueueFamilyIndices& queueFamilyIndices = pDevice->getQueueFamilyIndices();
-
-	// Update push-constant
-	PushConstant pushConstant = {dt};
-	m_ppCommandBuffers[m_CurrentFrame]->pushConstants(m_pPipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(PushConstant), (const void*)&pushConstant);
-
 	for (ParticleEmitter* pEmitter : m_ParticleEmitters) {
+		CommandBufferVK* pCommandBuffer = pEmitter->getCommandBuffer(m_CurrentFrame);
+		CommandPoolVK* pCommandPool = pEmitter->getCommandPool(m_CurrentFrame);
+
+		beginUpdateFrame(pEmitter, pCommandBuffer, pCommandPool);
+
+		// Update push-constant
+		PushConstant pushConstant = {dt};
+		pCommandBuffer->pushConstants(m_pPipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(PushConstant), (const void*)&pushConstant);
+
 		pEmitter->updateGPU(dt);
 
-		// Update descriptor set
-		BufferVK* pPositionsBuffer = reinterpret_cast<BufferVK*>(pEmitter->getPositionsBuffer());
-
 		DescriptorSetVK* pDescriptorSet = reinterpret_cast<DescriptorSetVK*>(pEmitter->getDescriptorSetCompute());
-		m_ppCommandBuffers[m_CurrentFrame]->bindDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, m_pPipelineLayout, 0, 1, &pDescriptorSet, 0, nullptr);
+		pCommandBuffer->bindDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, m_pPipelineLayout, 0, 1, &pDescriptorSet, 0, nullptr);
 
 		uint32_t particleCount = pEmitter->getParticleCount();
 		glm::u32vec3 workGroupSize(1 + particleCount / m_WorkGroupSize, 1, 1);
 
 		m_pProfiler->beginTimestamp(&m_TimestampDispatch);
-		m_ppCommandBuffers[m_CurrentFrame]->dispatch(workGroupSize);
+		pCommandBuffer->dispatch(workGroupSize);
 		m_pProfiler->endTimestamp(&m_TimestampDispatch);
-    }
 
-	endUpdateFrame();
+		endUpdateFrame(pCommandBuffer);
+    }
 }
 
-void ParticleEmitterHandlerVK::beginUpdateFrame()
+void ParticleEmitterHandlerVK::beginUpdateFrame(ParticleEmitter* pEmitter, CommandBufferVK* pCommandBuffer, CommandPoolVK* pCommandPool)
 {
-	m_ppCommandBuffers[m_CurrentFrame]->reset(true);
-	m_ppCommandPools[m_CurrentFrame]->reset();
+	pCommandBuffer->reset(true);
+	pCommandPool->reset();
 
-	m_ppCommandBuffers[m_CurrentFrame]->begin(nullptr, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+	pCommandBuffer->begin(nullptr, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-	m_pProfiler->reset(m_CurrentFrame, m_ppCommandBuffers[m_CurrentFrame]);
-	m_pProfiler->beginFrame(m_ppCommandBuffers[m_CurrentFrame]);
+	m_pProfiler->reset(m_CurrentFrame, pCommandBuffer);
+	m_pProfiler->beginFrame(pCommandBuffer);
 
-	m_ppCommandBuffers[m_CurrentFrame]->bindPipeline(m_pPipeline);
+	pCommandBuffer->bindPipeline(m_pPipeline);
 
-	// Update emitter buffers
-	for (ParticleEmitter* pEmitter : m_ParticleEmitters) {
-		if (pEmitter->m_EmitterUpdated) {
-			EmitterBuffer emitterBuffer = {};
-			pEmitter->createEmitterBuffer(emitterBuffer);
+	// Update emitter's buffers
+	if (pEmitter->m_EmitterUpdated) {
+		EmitterBuffer emitterBuffer = {};
+		pEmitter->createEmitterBuffer(emitterBuffer);
 
-			BufferVK* pEmitterBuffer = reinterpret_cast<BufferVK*>(pEmitter->getEmitterBuffer());
-			m_ppCommandBuffers[m_CurrentFrame]->updateBuffer(pEmitterBuffer, 0, &emitterBuffer, sizeof(EmitterBuffer));
+		BufferVK* pEmitterBuffer = reinterpret_cast<BufferVK*>(pEmitter->getEmitterBuffer());
+		pCommandBuffer->updateBuffer(pEmitterBuffer, 0, &emitterBuffer, sizeof(EmitterBuffer));
 
-			pEmitter->m_EmitterUpdated = false;
-		}
+		pEmitter->m_EmitterUpdated = false;
 	}
 }
 
-void ParticleEmitterHandlerVK::endUpdateFrame()
+void ParticleEmitterHandlerVK::endUpdateFrame(CommandBufferVK* pCommandBuffer)
 {
 	m_pProfiler->endFrame();
 
-	m_ppCommandBuffers[m_CurrentFrame]->end();
+	pCommandBuffer->end();
 
 	GraphicsContextVK* pGraphicsContext = reinterpret_cast<GraphicsContextVK*>(m_pGraphicsContext);
     DeviceVK* pDevice = pGraphicsContext->getDevice();
 
-	pDevice->executeCompute(m_ppCommandBuffers[m_CurrentFrame], nullptr, nullptr, 0, nullptr, 0);
+	pDevice->executeCompute(pCommandBuffer, nullptr, nullptr, 0, nullptr, 0);
 
 	m_CurrentFrame = (m_CurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
@@ -376,11 +370,6 @@ bool ParticleEmitterHandlerVK::createCommandPoolAndBuffers()
 		m_ppCommandPools[i] = DBG_NEW CommandPoolVK(pDevice, computeQueueIndex);
 
 		if (!m_ppCommandPools[i]->init()) {
-			return false;
-		}
-
-		m_ppCommandBuffers[i] = m_ppCommandPools[i]->allocateCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-		if (m_ppCommandBuffers[i] == nullptr) {
 			return false;
 		}
 	}

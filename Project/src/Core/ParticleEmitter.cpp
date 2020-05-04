@@ -4,6 +4,9 @@
 
 #include "Common/IBuffer.h"
 #include "Common/IMesh.h"
+#include "Vulkan/CommandBufferVK.h"
+#include "Vulkan/CommandPoolVK.h"
+#include "Vulkan/GraphicsContextVK.h"
 
 #include <algorithm>
 #include <math.h>
@@ -29,11 +32,20 @@ ParticleEmitter::ParticleEmitter(const ParticleEmitterInfo& emitterInfo)
     m_pAgesBuffer(nullptr),
     m_pEmitterBuffer(nullptr)
 {
+    for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        m_ppCommandPools[i] = nullptr;
+        m_ppCommandBuffers[i] = nullptr;
+    }
+
     createCenteringQuaternion();
 }
 
 ParticleEmitter::~ParticleEmitter()
 {
+    for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        SAFEDELETE(m_ppCommandPools[i]);
+    }
+
     SAFEDELETE(m_pPositionsBuffer);
     SAFEDELETE(m_pVelocitiesBuffer);
     SAFEDELETE(m_pAgesBuffer);
@@ -44,6 +56,10 @@ bool ParticleEmitter::initialize(IGraphicsContext* pGraphicsContext)
 {
     size_t particleCount = size_t(m_ParticlesPerSecond * m_ParticleDuration);
     resizeParticleStorage(particleCount);
+
+    if (!createCommandBuffers(pGraphicsContext)) {
+        return false;
+    }
 
     return createBuffers(pGraphicsContext);
 }
@@ -191,6 +207,28 @@ bool ParticleEmitter::createBuffers(IGraphicsContext* pGraphicsContext)
     pGraphicsContext->updateBuffer(m_pEmitterBuffer, 0, &emitterBuffer, sizeof(EmitterBuffer));
 
     return true;
+}
+
+bool ParticleEmitter::createCommandBuffers(IGraphicsContext* pGraphicsContext)
+{
+    GraphicsContextVK* pGraphicsContextVK = reinterpret_cast<GraphicsContextVK*>(pGraphicsContext);
+    DeviceVK* pDevice = pGraphicsContextVK->getDevice();
+
+	const uint32_t computeQueueIndex = pDevice->getQueueFamilyIndices().ComputeQueues.value().FamilyIndex;
+	for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+		m_ppCommandPools[i] = DBG_NEW CommandPoolVK(pDevice, computeQueueIndex);
+
+		if (!m_ppCommandPools[i]->init()) {
+			return false;
+		}
+
+		m_ppCommandBuffers[i] = m_ppCommandPools[i]->allocateCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+		if (m_ppCommandBuffers[i] == nullptr) {
+			return false;
+		}
+	}
+
+	return true;
 }
 
 void ParticleEmitter::ageEmitter(float dt)
