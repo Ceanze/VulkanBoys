@@ -117,20 +117,13 @@ void Application::init(size_t emitterCount, size_t frameCount, bool multipleQueu
 	m_pImgui->init();
 	m_pWindow->addEventHandler(m_pImgui);
 
-	// m_pParticleRenderer = m_pContext->createParticleRenderer(m_pRenderingHandler);
-	// m_pParticleRenderer->init();
-
 	//Create particlehandler
 	m_pParticleEmitterHandler = m_pContext->createParticleEmitterHandler(RENDERING_ENABLED);
 	m_pParticleEmitterHandler->initialize(m_pContext, m_pRenderingHandler, &m_Camera);
 
 	// Switch to GPU
 	m_pParticleEmitterHandler->toggleComputationDevice();
-
-	//Set renderers to renderhandler
 	m_pRenderingHandler->setParticleEmitterHandler(m_pParticleEmitterHandler);
-	//m_pRenderingHandler->setParticleRenderer(m_pParticleRenderer);
-	//m_pRenderingHandler->setImguiRenderer(m_pImgui);
 
 	m_pRenderingHandler->setClearColor(0.0f, 0.0f, 0.0f);
 
@@ -187,16 +180,7 @@ void Application::run()
 		double seconds = deltatime.count() / 1000.0;
 
 		m_pWindow->peekEvents();
-		if (m_pWindow->hasFocus())
-		{
-			update(seconds);
-			//renderUI(seconds);
-			//render(seconds);
-		}
-		else
-		{
-			std::this_thread::sleep_for(std::chrono::milliseconds(16));
-		}
+		update(seconds);
 	}
 }
 
