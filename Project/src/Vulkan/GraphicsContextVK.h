@@ -14,7 +14,7 @@ class GraphicsContextVK : public IGraphicsContext
 public:
 	DECL_NO_COPY(GraphicsContextVK);
 
-	GraphicsContextVK(IWindow* pWindow);
+	GraphicsContextVK(IWindow* pWindow, bool useMultipleQueues);
 	~GraphicsContextVK();
 
 	void init();
@@ -57,4 +57,5 @@ private:
 	SwapChainVK* m_pSwapChain;
 
 	bool m_RayTracingEnabled;
+	bool m_UseMultipleQueues;
 };

@@ -75,10 +75,10 @@ Application::~Application()
 	s_pInstance = nullptr;
 }
 
-void Application::init(size_t emitterCount, size_t frameCount, bool multipleQueues)
+void Application::init(size_t emitterCount, size_t frameCount, bool useMultipleQueues)
 {
 	LOG("Starting application");
-	LOG("Emitters: %d, Frames: %d, Use multiple queues: %d", emitterCount, frameCount, multipleQueues);
+	LOG("Emitters: %d, Frames: %d, Use multiple queues: %d", emitterCount, frameCount, useMultipleQueues);
 
 	m_MaxFrames = frameCount;
 
@@ -98,7 +98,7 @@ void Application::init(size_t emitterCount, size_t frameCount, bool multipleQueu
 	m_pWindow->addEventHandler(m_pInputHandler);
 
 	//Create context
-	m_pContext = IGraphicsContext::create(m_pWindow, API::VULKAN);
+	m_pContext = IGraphicsContext::create(m_pWindow, API::VULKAN, useMultipleQueues);
 
 	m_pContext->setRayTracingEnabled(!FORCE_RAY_TRACING_OFF);
 
@@ -139,7 +139,7 @@ void Application::init(size_t emitterCount, size_t frameCount, bool multipleQueu
 	}
 
 	ParticleEmitterInfo emitterInfo = {};
-	emitterInfo.position			= glm::vec3(6.0f, 0.1f, 0.0f);
+	emitterInfo.position			= glm::vec3(0.0f, 0.0f, 0.0f);
 	emitterInfo.direction			= glm::normalize(glm::vec3(0.0f, 0.9f, 0.1f));
 	emitterInfo.particleSize		= glm::vec2(0.1f, 0.1f);
 	emitterInfo.initialSpeed		= 5.5f;
@@ -147,11 +147,11 @@ void Application::init(size_t emitterCount, size_t frameCount, bool multipleQueu
 	emitterInfo.particlesPerSecond	= 200.0f;
 	emitterInfo.spread				= glm::quarter_pi<float>() / 1.3f;
 	emitterInfo.pTexture			= m_pParticleTexture;
-	m_pParticleEmitterHandler->createEmitter(emitterInfo);
 
-	// Second emitter
-	emitterInfo.position.x = -emitterInfo.position.x;
-	m_pParticleEmitterHandler->createEmitter(emitterInfo);
+	for (size_t emitterNr = 0; emitterNr < emitterCount; emitterNr++) {
+		emitterInfo.position.x = (float)emitterNr;
+		m_pParticleEmitterHandler->createEmitter(emitterInfo);
+	}
 
 	//Setup camera
 	m_Camera.setDirection(glm::vec3(0.0f, 0.0f, 1.0f));

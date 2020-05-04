@@ -41,7 +41,7 @@ public:
 
 	DECL_NO_COPY(DeviceVK);
 
-	bool finalize(InstanceVK* pInstance);
+	bool finalize(InstanceVK* pInstance, bool useMultipleQueues);
 	void release();
 
 	void addRequiredExtension(const char* extensionName);
@@ -128,6 +128,8 @@ private:
 
 	//Extensions
 	VkPhysicalDeviceRayTracingPropertiesNV m_RayTracingProperties;
+
+	bool m_UseMultipleQueues;
 
 public:
 	//Extension Function Pointers
