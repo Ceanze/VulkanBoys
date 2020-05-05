@@ -365,9 +365,7 @@ void ParticleEmitter::saveTimestampsToFile()
     std::ofstream file;
     file.open("results.txt", std::ios::binary | std::ios::out | std::ios::app | std::ios::ate);
 
-    for (auto& timestamp : m_Timestamps) {
-        file << timestamp;
-    }
-    
+    file.write((char*)m_Timestamps.data(), sizeof(uint64_t) * m_Timestamps.size());
+
     file.close();
 }

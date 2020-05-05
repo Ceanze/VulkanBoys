@@ -84,7 +84,7 @@ void Application::init(size_t emitterCount, size_t frameCount, bool useMultipleQ
 
 	TaskDispatcher::init();
 
-	//Create window
+	// Create window
 	m_pWindow = IWindow::create("Hello Vulkan", 1440, 900);
 	if (m_pWindow)
 	{
@@ -92,12 +92,12 @@ void Application::init(size_t emitterCount, size_t frameCount, bool useMultipleQ
 		m_pWindow->setFullscreenState(false);
 	}
 
-	//Create input
+	// Create input
 	m_pInputHandler = IInputHandler::create();
 	Input::setInputHandler(m_pInputHandler);
 	m_pWindow->addEventHandler(m_pInputHandler);
 
-	//Create context
+	// Create context
 	m_pContext = IGraphicsContext::create(m_pWindow, API::VULKAN, useMultipleQueues);
 
 	m_pContext->setRayTracingEnabled(!FORCE_RAY_TRACING_OFF);
@@ -108,19 +108,19 @@ void Application::init(size_t emitterCount, size_t frameCount, bool useMultipleQ
 	m_pRenderingHandler->setClearColor(0.0f, 0.0f, 0.0f);
 	m_pRenderingHandler->setViewport((float)m_pWindow->getWidth(), (float)m_pWindow->getHeight(), 0.0f, 1.0f, 0.0f, 0.0f);
 
-	//Create Scene
+	// Create Scene
 	m_pScene = m_pContext->createScene(m_pRenderingHandler);
 	m_pScene->init();
 
 	m_pRenderingHandler->setScene(m_pScene);
 
 	// Setup renderers
-	//Setup Imgui
+	// Setup Imgui
 	m_pImgui = m_pContext->createImgui();
 	m_pImgui->init();
 	m_pWindow->addEventHandler(m_pImgui);
 
-	//Create particlehandler
+	// Create particlehandler
 	m_pParticleEmitterHandler = m_pContext->createParticleEmitterHandler(RENDERING_ENABLED);
 	m_pParticleEmitterHandler->initialize(m_pContext, m_pRenderingHandler, &m_Camera);
 
