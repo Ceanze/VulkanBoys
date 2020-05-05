@@ -7,6 +7,8 @@
 #include "Vulkan/CommandBufferVK.h"
 #include "Vulkan/DeviceVK.h"
 
+#include <fstream>
+
 double ProfilerVK::m_TimestampToMillisec = 0.0;
 const uint32_t ProfilerVK::m_DashesPerRecurse = 2;
 uint32_t ProfilerVK::m_MaxTextWidth = 0;
@@ -39,6 +41,12 @@ ProfilerVK::ProfilerVK(const std::string& name, DeviceVK* pDevice, uint32_t quer
     const double milliSecondInv = 1000.0;
 
     m_TimestampToMillisec = nanoSecPerTime * nanoSecond * milliSecondInv;
+
+    // Clear the results file
+    std::ofstream file;
+    file.open("results.txt", std::ios::out | std::ios::trunc | std::ios::binary);
+    file.write((char*)(&m_TimestampToMillisec), sizeof(double));
+    file.close();
 }
 
 ProfilerVK::~ProfilerVK()
