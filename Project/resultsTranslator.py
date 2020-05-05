@@ -1,4 +1,4 @@
-import struct
+from dataclasses import dataclass
 import numpy as np
 
 emitterCount = 10
@@ -7,7 +7,7 @@ multipleQueues = True
 
 # Each emitter has frameCount * 2 timestamps
 
-def getTotalTimeGPU(emitterValues):
+def getMinMaxTimestamps(emitterValues):
     minTimestamp = np.iinfo(np.uint64).max
     maxTimestamp = 0
 
@@ -17,11 +17,20 @@ def getTotalTimeGPU(emitterValues):
         elif emitterValues[emitterIdx][frameCount - 1] > maxTimestamp:
             maxTimestamp = emitterValues[emitterIdx][frameCount - 1]
 
-    return maxTimestamp - minTimestamp
+    return (minTimestamp, maxTimestamp)
 
+def fillEmitterTimes(emitterValues, emitterTimes, timestampToMilli, minTimestamp):
+    for emitterIdx in range(len(emitterValues)):
+        for timestampIdx in range(0, len(emitterValues[emitterIdx]) - 1, 2):
+            duration = emitterValues[emitterIdx][timestampIdx + 1] - emitterValues[emitterIdx][timestampIdx]
+            duration *= timestampToMilli
+            startTime = emitterValues[emitterIdx][timestampIdx] - minTimestamp
+            startTime *= timestampToMilli
+            emitterTimes[emitterIdx].append((startTime, duration))
 
 def main():
     emitterValues = [[]]*emitterCount
+    emitterTimes = [[]]*emitterCount
 
     # Read values
     file = open("results.txt", "rb")
@@ -29,8 +38,12 @@ def main():
     for emitterIdx in range(emitterCount):
         emitterValues[emitterIdx] = np.frombuffer(file.read(8 * 2 * frameCount), dtype=np.uint64)
 
-    totalTimeGPU = getTotalTimeGPU(emitterValues)
-    totalTime = totalTimeGPU * timestampToMilli
+    minMaxGPU = getMinMaxTimestamps(emitterValues)
+    totalTime = (minMaxGPU[1] - minMaxGPU[0]) * timestampToMilli
+
+    fillEmitterTimes(emitterValues, emitterTimes, timestampToMilli, minMaxGPU[0])
+
+    print(emitterTimes[0])
     print("Total time: " + str(totalTime))
 
 
