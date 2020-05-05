@@ -21,10 +21,11 @@ struct Timestamp {
 class ProfilerVK : public Profiler
 {
 public:
-    ProfilerVK(const std::string& name, DeviceVK* pDevice);
+    ProfilerVK(const std::string& name, DeviceVK* pDevice, uint32_t queriesPerFrame = 8);
     ~ProfilerVK();
 
-    void getLatestTimestamps(std::vector<uint64_t>& timestamps);
+    const std::vector<uint64_t>& getTimestamps() const { return m_TimeResults; }
+    void writeResults();
 
     void setParentProfiler(ProfilerVK* pParentProfiler);
 
@@ -44,7 +45,6 @@ public:
 
 private:
     // Fetches timestamp data from Vulkan and writes it to timestamp objects
-    void writeResults();
     void findWidestText();
     void expandQueryPools(CommandBufferVK* pCommandBuffer);
 
@@ -70,7 +70,9 @@ private:
     DeviceVK* m_pDevice;
     CommandBufferVK* m_pProfiledCommandBuffer;
 
-    uint32_t m_CurrentFrame, m_NextQuery;
+    uint32_t m_CurrentFrame;
+    // Query idx for each frame
+    uint32_t m_pNextQuery[MAX_FRAMES_IN_FLIGHT];
     bool m_OutOfQueries;
     std::vector<uint64_t> m_TimeResults;
 };

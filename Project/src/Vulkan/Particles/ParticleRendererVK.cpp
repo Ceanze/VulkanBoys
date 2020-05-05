@@ -307,8 +307,8 @@ bool ParticleRendererVK::createQuadMesh()
 
 void ParticleRendererVK::createProfiler()
 {
-	m_pProfiler = DBG_NEW ProfilerVK("Particles Renderer", m_pGraphicsContext->getDevice());
-	m_pProfiler->initTimestamp(&m_TimestampDraw, "Draw Instanced");
+	// m_pProfiler = DBG_NEW ProfilerVK("Particles Renderer", m_pGraphicsContext->getDevice());
+	// m_pProfiler->initTimestamp(&m_TimestampDraw, "Draw Instanced");
 }
 
 bool ParticleRendererVK::bindDescriptorSet(ParticleEmitter* pEmitter)

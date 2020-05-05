@@ -27,7 +27,7 @@
 #define AGES_BINDING        	2
 #define EMITTER_BINDING     	3
 
-ParticleEmitterHandlerVK::ParticleEmitterHandlerVK(bool renderingEnabled)
+ParticleEmitterHandlerVK::ParticleEmitterHandlerVK(bool renderingEnabled, uint32_t frameCount)
 	:ParticleEmitterHandler(renderingEnabled),
 	m_pDescriptorPool(nullptr),
 	m_pDescriptorSetLayoutPerEmitter(nullptr),
@@ -36,7 +36,8 @@ ParticleEmitterHandlerVK::ParticleEmitterHandlerVK(bool renderingEnabled)
 	m_pCommandPoolGraphics(nullptr),
 	m_pGBufferSampler(nullptr),
 	m_WorkGroupSize(0),
-	m_CurrentFrame(0)
+	m_CurrentFrame(0),
+	m_FrameCount(frameCount)
 {
     for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         m_ppCommandPools[i] = nullptr;
@@ -269,7 +270,7 @@ void ParticleEmitterHandlerVK::acquireForCompute(BufferVK* pBuffer, CommandBuffe
 
 void ParticleEmitterHandlerVK::initializeEmitter(ParticleEmitter* pEmitter)
 {
-	pEmitter->initialize(m_pGraphicsContext);
+	pEmitter->initialize(m_pGraphicsContext, m_FrameCount);
 
 	// Create descriptor set for the emitter
 	DescriptorSetVK* pEmitterDescriptorSet = m_pDescriptorPool->allocDescriptorSet(m_pDescriptorSetLayoutPerEmitter);
@@ -327,7 +328,6 @@ void ParticleEmitterHandlerVK::beginUpdateFrame(ParticleEmitter* pEmitter)
 	pCommandBuffer->begin(nullptr, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
 	pProfiler->reset(m_CurrentFrame, pCommandBuffer);
-	pEmitter->saveLatestTimestamps();
 
 	pProfiler->beginFrame(pCommandBuffer);
 

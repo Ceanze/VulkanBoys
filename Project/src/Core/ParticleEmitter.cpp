@@ -57,7 +57,7 @@ ParticleEmitter::~ParticleEmitter()
     SAFEDELETE(m_pProfiler);
 }
 
-bool ParticleEmitter::initialize(IGraphicsContext* pGraphicsContext)
+bool ParticleEmitter::initialize(IGraphicsContext* pGraphicsContext, uint32_t frameCount)
 {
     size_t particleCount = size_t(m_ParticlesPerSecond * m_ParticleDuration);
     resizeParticleStorage(particleCount);
@@ -66,7 +66,7 @@ bool ParticleEmitter::initialize(IGraphicsContext* pGraphicsContext)
         return false;
     }
 
-    createProfiler(pGraphicsContext);
+    createProfiler(pGraphicsContext, frameCount);
 
     return createBuffers(pGraphicsContext);
 }
@@ -82,11 +82,6 @@ void ParticleEmitter::updateGPU(float dt)
 {
     ageEmitter(dt);
     // The rest is performed by the particle emitter handler
-}
-
-void ParticleEmitter::saveLatestTimestamps()
-{
-    m_pProfiler->getLatestTimestamps(m_Timestamps);
 }
 
 void ParticleEmitter::createEmitterBuffer(EmitterBuffer& emitterBuffer)
@@ -243,12 +238,12 @@ bool ParticleEmitter::createCommandBuffers(IGraphicsContext* pGraphicsContext)
 	return true;
 }
 
-void ParticleEmitter::createProfiler(IGraphicsContext* pGraphicsContext)
+void ParticleEmitter::createProfiler(IGraphicsContext* pGraphicsContext, uint32_t frameCount)
 {
 	GraphicsContextVK* pGraphicsContextVK = reinterpret_cast<GraphicsContextVK*>(pGraphicsContext);
     DeviceVK* pDevice = pGraphicsContextVK->getDevice();
 
-	m_pProfiler = DBG_NEW ProfilerVK("Particles Update", pDevice);
+	m_pProfiler = DBG_NEW ProfilerVK("Particles Update", pDevice, 2u * frameCount);
 }
 
 void ParticleEmitter::ageEmitter(float dt)
@@ -362,10 +357,13 @@ void ParticleEmitter::resizeParticleStorage(size_t newSize)
 
 void ParticleEmitter::saveTimestampsToFile()
 {
+    m_pProfiler->writeResults();
+    const std::vector<uint64_t>& timestamps = m_pProfiler->getTimestamps();
+
     std::ofstream file;
     file.open("results.txt", std::ios::binary | std::ios::out | std::ios::app | std::ios::ate);
 
-    file.write((char*)m_Timestamps.data(), sizeof(uint64_t) * m_Timestamps.size());
+    file.write((char*)timestamps.data(), sizeof(uint64_t) * timestamps.size());
 
     file.close();
 }

@@ -1291,8 +1291,8 @@ bool SceneVK::updateTLAS()
 
 void SceneVK::createProfiler()
 {
-	m_pProfiler = DBG_NEW ProfilerVK("Scene Update", m_pDevice);
-	m_pProfiler->initTimestamp(&m_TimestampBuildAccelStruct, "Build top-level acceleration structure");
+	// m_pProfiler = DBG_NEW ProfilerVK("Scene Update", m_pDevice);
+	// m_pProfiler->initTimestamp(&m_TimestampBuildAccelStruct, "Build top-level acceleration structure");
 }
 
 void SceneVK::cleanGarbage()

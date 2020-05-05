@@ -121,7 +121,7 @@ void Application::init(size_t emitterCount, size_t frameCount, bool useMultipleQ
 	m_pWindow->addEventHandler(m_pImgui);
 
 	// Create particlehandler
-	m_pParticleEmitterHandler = m_pContext->createParticleEmitterHandler(RENDERING_ENABLED);
+	m_pParticleEmitterHandler = m_pContext->createParticleEmitterHandler(RENDERING_ENABLED, (uint32_t)frameCount);
 	m_pParticleEmitterHandler->initialize(m_pContext, m_pRenderingHandler, &m_Camera);
 
 	// Switch to GPU
@@ -294,8 +294,6 @@ static glm::vec4 g_Color = glm::vec4(1.0f);
 
 void Application::update(double dt)
 {
-	Profiler::newFrame();
-
 	if (!m_TestParameters.Running)
 	{
 		if (m_KeyInputEnabled)

@@ -716,7 +716,7 @@ bool MeshRendererVK::createSamplers()
 
 void MeshRendererVK::createProfiler()
 {
-	m_pGPassProfiler		= DBG_NEW ProfilerVK("Mesh Renderer: Geometry Pass", m_pContext->getDevice());
-	m_pLightPassProfiler	= DBG_NEW ProfilerVK("Mesh Renderer: Light Pass", m_pContext->getDevice());
+	//m_pGPassProfiler		= DBG_NEW ProfilerVK("Mesh Renderer: Geometry Pass", m_pContext->getDevice());
+	//m_pLightPassProfiler	= DBG_NEW ProfilerVK("Mesh Renderer: Light Pass", m_pContext->getDevice());
 	//m_pGPassProfiler->initTimestamp(&m_TimestampGeometry, "Draw indexed");
 }

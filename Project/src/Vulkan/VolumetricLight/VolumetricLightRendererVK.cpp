@@ -680,8 +680,8 @@ bool VolumetricLightRendererVK::createSphereMesh()
 
 void VolumetricLightRendererVK::createProfiler()
 {
-	m_pProfilerBuildBuffer = DBG_NEW ProfilerVK("Volumetric Light: Build Light Buffer", m_pGraphicsContext->getDevice());
-	m_pProfilerApplyBuffer = DBG_NEW ProfilerVK("Volumetric Light: Apply Light Buffer", m_pGraphicsContext->getDevice());
+	// m_pProfilerBuildBuffer = DBG_NEW ProfilerVK("Volumetric Light: Build Light Buffer", m_pGraphicsContext->getDevice());
+	// m_pProfilerApplyBuffer = DBG_NEW ProfilerVK("Volumetric Light: Apply Light Buffer", m_pGraphicsContext->getDevice());
 }
 
 bool VolumetricLightRendererVK::createRenderResources(VolumetricPointLight& pointLight)

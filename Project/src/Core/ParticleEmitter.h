@@ -48,7 +48,7 @@ public:
     ParticleEmitter(const ParticleEmitterInfo& emitterInfo);
     ~ParticleEmitter();
 
-    bool initialize(IGraphicsContext* pGraphicsContext);
+    bool initialize(IGraphicsContext* pGraphicsContext, uint32_t frameCount);
 
     void update(float dt);
     void updateGPU(float dt);
@@ -56,8 +56,6 @@ public:
     CommandBufferVK* getCommandBuffer(uint32_t frameIndex)  { return m_ppCommandBuffers[frameIndex]; }
     CommandPoolVK* getCommandPool(uint32_t frameIndex)      { return m_ppCommandPools[frameIndex]; }
     ProfilerVK* getProfiler()                               { return m_pProfiler; }
-
-    void saveLatestTimestamps();
 
     const ParticleStorage& getParticleStorage() const { return m_ParticleStorage; }
     void createEmitterBuffer(EmitterBuffer& emitterBuffer);
@@ -97,7 +95,7 @@ public:
 private:
     bool createBuffers(IGraphicsContext* pGraphicsContext);
     bool createCommandBuffers(IGraphicsContext* pGraphicsContext);
-    void createProfiler(IGraphicsContext* pGraphicsContext);
+    void createProfiler(IGraphicsContext* pGraphicsContext, uint32_t frameCount);
 
     void ageEmitter(float dt);
     void moveParticles(float dt);
@@ -115,7 +113,6 @@ private:
     CommandPoolVK* m_ppCommandPools[MAX_FRAMES_IN_FLIGHT];
 
     ProfilerVK* m_pProfiler;
-    std::vector<uint64_t> m_Timestamps;
 
     glm::vec3 m_Position, m_Direction;
     glm::vec2 m_ParticleSize;

@@ -742,8 +742,8 @@ bool RayTracingRendererVK::createTextures()
 
 void RayTracingRendererVK::createProfiler()
 {
-	m_pProfiler = DBG_NEW ProfilerVK("Raytracer", m_pContext->getDevice());
-	m_pProfiler->initTimestamp(&m_TimestampTraceRays, "Trace Rays");
+	// m_pProfiler = DBG_NEW ProfilerVK("Raytracer", m_pContext->getDevice());
+	// m_pProfiler->initTimestamp(&m_TimestampTraceRays, "Trace Rays");
 
 	//ProfilerVK* pSceneProfiler = m_pRayTracingScene->getProfiler();
 	//pSceneProfiler->setParentProfiler(m_pProfiler);

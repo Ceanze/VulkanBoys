@@ -26,7 +26,7 @@ struct ParticleStorage;
 class ParticleEmitterHandlerVK : public ParticleEmitterHandler
 {
 public:
-    ParticleEmitterHandlerVK(bool renderingEnabled);
+    ParticleEmitterHandlerVK(bool renderingEnabled, uint32_t frameCount);
     ~ParticleEmitterHandlerVK();
 
     virtual void update(float dt) override;
@@ -78,4 +78,5 @@ private:
     uint32_t m_WorkGroupSize;
 
     uint32_t m_CurrentFrame;
+    uint32_t m_FrameCount;
 };

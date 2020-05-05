@@ -86,9 +86,9 @@ IRenderer* GraphicsContextVK::createParticleRenderer(RenderingHandler* pRenderin
 	return DBG_NEW ParticleRendererVK(this, reinterpret_cast<RenderingHandlerVK*>(pRenderingHandler));
 }
 
-ParticleEmitterHandler* GraphicsContextVK::createParticleEmitterHandler(bool renderingEnabled)
+ParticleEmitterHandler* GraphicsContextVK::createParticleEmitterHandler(bool renderingEnabled, uint32_t frameCount)
 {
-	return DBG_NEW ParticleEmitterHandlerVK(renderingEnabled);
+	return DBG_NEW ParticleEmitterHandlerVK(renderingEnabled, frameCount);
 }
 
 IImgui* GraphicsContextVK::createImgui()
