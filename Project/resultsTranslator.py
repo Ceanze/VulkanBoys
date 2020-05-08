@@ -53,7 +53,8 @@ def visualizeTimeline(emitterTimes):
 
 def fillEmitterTimes(emitterValues, emitterTimes, timestampToMilli):
     for emitterIdx in range(len(emitterValues)):
-        for timestampIdx in range(2, len(emitterValues[emitterIdx]) - 1, 2):
+        minTimestamp = emitterValues[emitterIdx][0]
+        for timestampIdx in range(0, len(emitterValues[emitterIdx]) - 1, 2):
             timestamp1 = emitterValues[emitterIdx][timestampIdx + 1]
             timestamp0 = emitterValues[emitterIdx][timestampIdx]
 
@@ -62,7 +63,7 @@ def fillEmitterTimes(emitterValues, emitterTimes, timestampToMilli):
 
             duration    = timestamp1 - timestamp0
             duration    *= timestampToMilli
-            startTime   = timestamp0 - emitterValues[emitterIdx][0]
+            startTime   = timestamp0 - minTimestamp
             startTime   *= timestampToMilli
             emitterTimes[emitterIdx].append((startTime, duration))
 
