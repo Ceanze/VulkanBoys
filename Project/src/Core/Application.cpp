@@ -182,7 +182,6 @@ void Application::run()
 		std::chrono::duration<double, std::milli> deltatime = currentTime - lastTime;
 		double seconds = deltatime.count() / 1000.0;
 
-		m_pWindow->peekEvents();
 		update(seconds);
 	}
 }
@@ -294,88 +293,7 @@ static glm::vec4 g_Color = glm::vec4(1.0f);
 
 void Application::update(double dt)
 {
-	if (!m_TestParameters.Running)
-	{
-		if (m_KeyInputEnabled)
-		{
-			constexpr float speed = 0.75f;
-			if (Input::isKeyPressed(EKey::KEY_A))
-			{
-				m_Camera.translate(glm::vec3(-speed * dt, 0.0f, 0.0f));
-			}
-			else if (Input::isKeyPressed(EKey::KEY_D))
-			{
-				m_Camera.translate(glm::vec3(speed * dt, 0.0f, 0.0f));
-			}
-
-			if (Input::isKeyPressed(EKey::KEY_W))
-			{
-				m_Camera.translate(glm::vec3(0.0f, 0.0f, speed * dt));
-			}
-			else if (Input::isKeyPressed(EKey::KEY_S))
-			{
-				m_Camera.translate(glm::vec3(0.0f, 0.0f, -speed * dt));
-			}
-
-			if (Input::isKeyPressed(EKey::KEY_Q))
-			{
-				m_Camera.translate(glm::vec3(0.0f, speed * dt, 0.0f));
-			}
-			else if (Input::isKeyPressed(EKey::KEY_E))
-			{
-				m_Camera.translate(glm::vec3(0.0f, -speed * dt, 0.0f));
-			}
-
-			if (Input::isKeyPressed(EKey::KEY_A))
-			{
-				m_Camera.translate(glm::vec3(-speed * dt, 0.0f, 0.0f));
-			}
-			else if (Input::isKeyPressed(EKey::KEY_D))
-			{
-				m_Camera.translate(glm::vec3(speed * dt, 0.0f, 0.0f));
-			}
-
-			constexpr float rotationSpeed = 30.0f;
-			if (Input::isKeyPressed(EKey::KEY_LEFT))
-			{
-				m_Camera.rotate(glm::vec3(0.0f, -rotationSpeed * dt, 0.0f));
-			}
-			else if (Input::isKeyPressed(EKey::KEY_RIGHT))
-			{
-				m_Camera.rotate(glm::vec3(0.0f, rotationSpeed * dt, 0.0f));
-			}
-
-			if (Input::isKeyPressed(EKey::KEY_UP))
-			{
-				m_Camera.rotate(glm::vec3(-rotationSpeed * dt, 0.0f, 0.0f));
-			}
-			else if (Input::isKeyPressed(EKey::KEY_DOWN))
-			{
-				m_Camera.rotate(glm::vec3(rotationSpeed * dt, 0.0f, 0.0f));
-			}
-		}
-	}
-	else
-	{
-		float deltaTimeMS = (float)dt * 1000.0f;
-		m_TestParameters.FrameTimeSum += deltaTimeMS;
-		m_TestParameters.FrameCount += 1.0f;
-		m_TestParameters.AverageFrametime = m_TestParameters.FrameTimeSum / m_TestParameters.FrameCount;
-		m_TestParameters.WorstFrametime = deltaTimeMS > m_TestParameters.WorstFrametime ? deltaTimeMS : m_TestParameters.WorstFrametime;
-		m_TestParameters.BestFrametime = deltaTimeMS < m_TestParameters.BestFrametime ? deltaTimeMS : m_TestParameters.BestFrametime;
-	}
-
-	m_Camera.update();
-
-	if (m_UpdateCamera)
-	{
-		Input::setMousePosition(m_pWindow, glm::vec2(m_pWindow->getClientWidth() / 2.0f, m_pWindow->getClientHeight() / 2.0f));
-	}
-
 	m_pParticleEmitterHandler->update((float)dt);
-
-	m_pScene->updateCamera(m_Camera);
-	m_pScene->updateDebugParameters();
 }
 
 void Application::renderUI(double dt)
