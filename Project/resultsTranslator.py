@@ -36,24 +36,24 @@ def visualizeTimeline(emitterTimes):
 
 # Each emitter has frameCount * 2 timestamps
 
-def getMinMaxTimestamps(emitterValues):
-    minTimestamp = np.iinfo(np.uint64).max
-    maxTimestamp = 0
-    maxDelta = 0
+# def getMinMaxTimestamps(emitterValues):
+#     minTimestamp = np.iinfo(np.uint64).max
+#     maxTimestamp = 0
+#     maxDelta = 0
 
+#     for emitterIdx in range(len(emitterValues)):
+#         for i in range(emitterCount):
+#             delta = emitterValues[emitterIdx][frameCount - 1] - emitterValues[i][0]
+#             if delta > maxDelta:
+#                 maxDelta = delta
+#                 minTimestamp = emitterValues[i][0]
+#                 maxTimestamp = emitterValues[emitterIdx][frameCount - 1]
+
+#     return (minTimestamp, maxTimestamp)
+
+def fillEmitterTimes(emitterValues, emitterTimes, timestampToMilli):
     for emitterIdx in range(len(emitterValues)):
-        for i in range(emitterCount):
-            delta = emitterValues[emitterIdx][frameCount - 1] - emitterValues[i][0]
-            if delta > maxDelta:
-                maxDelta = delta
-                minTimestamp = emitterValues[i][0]
-                maxTimestamp = emitterValues[emitterIdx][frameCount - 1]
-
-    return (minTimestamp, maxTimestamp)
-
-def fillEmitterTimes(emitterValues, emitterTimes, timestampToMilli, minTimestamp):
-    for emitterIdx in range(len(emitterValues)):
-        for timestampIdx in range(0, len(emitterValues[emitterIdx]) - 1, 2):
+        for timestampIdx in range(2, len(emitterValues[emitterIdx]) - 1, 2):
             timestamp1 = emitterValues[emitterIdx][timestampIdx + 1]
             timestamp0 = emitterValues[emitterIdx][timestampIdx]
 
@@ -62,7 +62,7 @@ def fillEmitterTimes(emitterValues, emitterTimes, timestampToMilli, minTimestamp
 
             duration    = timestamp1 - timestamp0
             duration    *= timestampToMilli
-            startTime   = timestamp0 - minTimestamp
+            startTime   = timestamp0 - emitterValues[emitterIdx][0]
             startTime   *= timestampToMilli
             emitterTimes[emitterIdx].append((startTime, duration))
 
@@ -78,10 +78,11 @@ def main():
     for emitterIdx in range(emitterCount):
         emitterValues[emitterIdx] = np.frombuffer(file.read(8 * 2 * frameCount), dtype=np.uint64)
 
-    minMaxGPU = getMinMaxTimestamps(emitterValues)
-    totalTime = (minMaxGPU[1] - minMaxGPU[0]) * timestampToMilli
+    # minMaxGPU = getMinMaxTimestamps(emitterValues)
+    # totalTime = (minMaxGPU[1] - minMaxGPU[0]) * timestampToMilli
+    totalTime = (emitterValues[0][emitterCount - 1] - emitterValues[0][0]) * timestampToMilli
 
-    fillEmitterTimes(emitterValues, emitterTimes, timestampToMilli, minMaxGPU[0])
+    fillEmitterTimes(emitterValues, emitterTimes, timestampToMilli)
 
     print(emitterTimes[0])
     print("Total time: " + str(totalTime))
