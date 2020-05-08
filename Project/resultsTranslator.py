@@ -10,12 +10,15 @@ multipleQueues = True
 def getMinMaxTimestamps(emitterValues):
     minTimestamp = np.iinfo(np.uint64).max
     maxTimestamp = 0
+    maxDelta = 0
 
     for emitterIdx in range(len(emitterValues)):
-        if emitterValues[emitterIdx][0] < minTimestamp:
-            minTimestamp = emitterValues[emitterIdx][0]
-        elif emitterValues[emitterIdx][frameCount - 1] > maxTimestamp:
-            maxTimestamp = emitterValues[emitterIdx][frameCount - 1]
+        for i in range(emitterCount):
+            delta = emitterValues[emitterIdx][frameCount - 1] - emitterValues[i][0]
+            if delta > maxDelta:
+                maxDelta = delta
+                minTimestamp = emitterValues[i][0]
+                maxTimestamp = emitterValues[emitterIdx][frameCount - 1]
 
     return (minTimestamp, maxTimestamp)
 
