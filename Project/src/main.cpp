@@ -7,7 +7,7 @@
 int main(int argc, const char* argv[])
 {
 	size_t emitterCount = 2;
-	size_t frameCount = 10;
+	size_t frameCount = 3;
 	bool multipleQueues = true;
 
 	if (argc > 1) {

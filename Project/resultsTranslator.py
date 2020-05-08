@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 emitterCount = 2
-frameCount = 10
+frameCount = 3
 multipleQueues = True
 
 def visualizeTimeline(emitterTimes):
@@ -68,7 +68,7 @@ def fillEmitterTimes(emitterValues, emitterTimes, timestampToMilli):
 
 def main():
     emitterTimes = []
-    for idx in range(emitterCount):
+    for _ in range(emitterCount):
         emitterTimes.append([])
     emitterValues   = [[]] * emitterCount
 

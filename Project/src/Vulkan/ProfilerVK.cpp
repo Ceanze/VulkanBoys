@@ -7,6 +7,7 @@
 #include "Vulkan/CommandBufferVK.h"
 #include "Vulkan/DeviceVK.h"
 
+#include <array>
 #include <fstream>
 
 double ProfilerVK::m_TimestampToMillisec = 0.0;
@@ -90,33 +91,46 @@ void ProfilerVK::beginFrame(CommandBufferVK* pProfiledCmdBuffer)
 
 void ProfilerVK::writeResults()
 {
+    std::array<std::vector<uint64_t>, MAX_FRAMES_IN_FLIGHT> frameTimestamps;
     uint32_t totalQueryCount = 0u;
-    for (uint32_t queryCount : m_pNextQuery) {
+
+    for (size_t frameIdx = 0; frameIdx < MAX_FRAMES_IN_FLIGHT; frameIdx++) {
+        uint32_t queryCount = m_pNextQuery[frameIdx];
+
+        frameTimestamps[frameIdx].resize(queryCount);
         totalQueryCount += queryCount;
     }
 
+    // TimeResults will contain every timestamp from every command buffer
     m_TimeResults.resize(totalQueryCount);
-    void* pTimestampsPtr = (void*)m_TimeResults.data();
 
     for (uint32_t frameIdx = 0; frameIdx < MAX_FRAMES_IN_FLIGHT; frameIdx++) {
-        VkQueryPool currentQueryPool = m_ppQueryPools[m_CurrentFrame]->getQueryPool();
+        VkQueryPool currentQueryPool = m_ppQueryPools[frameIdx]->getQueryPool();
         uint32_t queryCount = m_pNextQuery[frameIdx];
 
         if (vkGetQueryPoolResults(
             m_pDevice->getDevice(), currentQueryPool,
-            0, queryCount,                  // First query, query count
-            queryCount * sizeof(uint64_t),  // Data size
-            pTimestampsPtr,                 // Data pointer
-            sizeof(uint64_t),               // Stride
+            0, queryCount,                      // First query, query count
+            queryCount * sizeof(uint64_t),      // Data size
+            frameTimestamps[frameIdx].data(), // Data pointer
+            sizeof(uint64_t),                   // Stride
             VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT)
             != VK_SUCCESS)
         {
             LOG("Profiler %s: failed to get query pool results", m_Name.c_str());
             return;
         }
+    }
 
-        uint32_t ptrOffset = uint32_t(sizeof(uint64_t)) * queryCount;
-        pTimestampsPtr = (void*)((char*)pTimestampsPtr + ptrOffset);
+    // Add all timestamps together
+    size_t frameIdx = 0;
+
+    for (size_t queryIdx = 0; queryIdx + 1 < totalQueryCount; queryIdx += 2u) {
+        size_t rightIdx = queryIdx / (frameTimestamps.size() * 2);
+        m_TimeResults[queryIdx]         = frameTimestamps[frameIdx][rightIdx++];
+        m_TimeResults[queryIdx + 1u]    = frameTimestamps[frameIdx][rightIdx];
+
+        frameIdx = (frameIdx + 1) % frameTimestamps.size();
     }
 }
 
