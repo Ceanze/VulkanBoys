@@ -1,9 +1,36 @@
 from dataclasses import dataclass
+import matplotlib.pyplot as plt
 import numpy as np
 
 emitterCount = 10
 frameCount = 100
 multipleQueues = True
+
+def visualizeTimeline(emitterTimes):
+    yTickLabels = [""] * len(emitterTimes)
+
+    barHeight = 2
+
+    # Vertical space between each emitter's bar
+    verticalSpacing = 1
+    _, ax = plt.subplots()
+
+    for emitterIdx in range(len(emitterTimes)):
+        yTickLabels[emitterIdx] = "Emitter #{}".format(emitterIdx)
+
+        barStartY = verticalSpacing * (emitterIdx + 1) + emitterIdx * barHeight
+
+        ax.broken_barh(emitterTimes[emitterIdx], (barStartY, barHeight))
+
+    #ax.set_ylim(5, 35)
+    #ax.set_xlim(0, 200)
+    ax.set_xlabel('Execution Time (ms)')
+    #ax.set_yticks([15, 25])
+
+    ax.set_yticklabels(yTickLabels)
+    ax.grid(True)
+
+    plt.show()
 
 # Each emitter has frameCount * 2 timestamps
 
@@ -22,6 +49,10 @@ def getMinMaxTimestamps(emitterValues):
 def fillEmitterTimes(emitterValues, emitterTimes, timestampToMilli, minTimestamp):
     for emitterIdx in range(len(emitterValues)):
         for timestampIdx in range(0, len(emitterValues[emitterIdx]) - 1, 2):
+            if emitterValues[emitterIdx][timestampIdx + 1] < emitterValues[emitterIdx][timestampIdx]:
+                print("1st larger than 2nd: {} vs {}".format(emitterValues[emitterIdx][timestampIdx + 1], emitterValues[emitterIdx][timestampIdx]))
+                #emitterTimes[emitterIdx].append(0)
+            #else:
             duration = emitterValues[emitterIdx][timestampIdx + 1] - emitterValues[emitterIdx][timestampIdx]
             duration *= timestampToMilli
             startTime = emitterValues[emitterIdx][timestampIdx] - minTimestamp
@@ -29,8 +60,8 @@ def fillEmitterTimes(emitterValues, emitterTimes, timestampToMilli, minTimestamp
             emitterTimes[emitterIdx].append((startTime, duration))
 
 def main():
-    emitterValues = [[]]*emitterCount
-    emitterTimes = [[]]*emitterCount
+    emitterValues   = [[]] * emitterCount
+    emitterTimes    = [[]] * emitterCount
 
     # Read values
     file = open("results.txt", "rb")
@@ -45,6 +76,7 @@ def main():
 
     print(emitterTimes[0])
     print("Total time: " + str(totalTime))
+    visualizeTimeline(emitterTimes)
 
 
 if __name__ == "__main__":
