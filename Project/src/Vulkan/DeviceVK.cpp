@@ -86,25 +86,22 @@ void DeviceVK::addOptionalExtension(const char* extensionName)
 	m_RequestedOptionalExtensions.push_back(extensionName);
 }
 
-void DeviceVK::executeGraphics(CommandBufferVK* pCommandBuffer, const VkSemaphore* pWaitSemaphore, const VkPipelineStageFlags* pWaitStages, uint32_t waitSemaphoreCount, const VkSemaphore* pSignalSemaphores, uint32_t signalSemaphoreCount)
+void DeviceVK::executeGraphics(CommandBufferVK* pCommandBuffer, const VkSemaphore* pWaitSemaphore, const VkPipelineStageFlags* pWaitStages, uint32_t waitSemaphoreCount, const VkSemaphore* pSignalSemaphores, uint32_t signalSemaphoreCount, uint32_t queueIndex)
 {
 	std::scoped_lock<Spinlock> lock(m_GraphicsLock);
-	executeCommandBuffer(m_GraphicsQueues[m_NextGraphicsQueue * m_UseMultipleQueues], pCommandBuffer, pWaitSemaphore, pWaitStages, waitSemaphoreCount, pSignalSemaphores, signalSemaphoreCount);
-	m_NextGraphicsQueue = (m_NextGraphicsQueue + 1) % m_GraphicsQueues.size();
+	executeCommandBuffer(m_GraphicsQueues[queueIndex], pCommandBuffer, pWaitSemaphore, pWaitStages, waitSemaphoreCount, pSignalSemaphores, signalSemaphoreCount);
 }
 
-void DeviceVK::executeCompute(CommandBufferVK* pCommandBuffer, const VkSemaphore* pWaitSemaphore, const VkPipelineStageFlags* pWaitStages, uint32_t waitSemaphoreCount, const VkSemaphore* pSignalSemaphores, uint32_t signalSemaphoreCount)
+void DeviceVK::executeCompute(CommandBufferVK* pCommandBuffer, const VkSemaphore* pWaitSemaphore, const VkPipelineStageFlags* pWaitStages, uint32_t waitSemaphoreCount, const VkSemaphore* pSignalSemaphores, uint32_t signalSemaphoreCount, uint32_t queueIndex)
 {
 	std::scoped_lock<Spinlock> lock(m_ComputeLock);
-	executeCommandBuffer(m_ComputeQueues[m_NextComputeQueue * m_UseMultipleQueues], pCommandBuffer, pWaitSemaphore, pWaitStages, waitSemaphoreCount, pSignalSemaphores, signalSemaphoreCount);
-	m_NextComputeQueue = (m_NextComputeQueue + 1) % m_ComputeQueues.size();
+	executeCommandBuffer(m_ComputeQueues[queueIndex], pCommandBuffer, pWaitSemaphore, pWaitStages, waitSemaphoreCount, pSignalSemaphores, signalSemaphoreCount);
 }
 
-void DeviceVK::executeTransfer(CommandBufferVK* pCommandBuffer, const VkSemaphore* pWaitSemaphore, const VkPipelineStageFlags* pWaitStages, uint32_t waitSemaphoreCount, const VkSemaphore* pSignalSemaphores, uint32_t signalSemaphoreCount)
+void DeviceVK::executeTransfer(CommandBufferVK* pCommandBuffer, const VkSemaphore* pWaitSemaphore, const VkPipelineStageFlags* pWaitStages, uint32_t waitSemaphoreCount, const VkSemaphore* pSignalSemaphores, uint32_t signalSemaphoreCount, uint32_t queueIndex)
 {
 	std::scoped_lock<Spinlock> lock(m_TransferLock);
-	executeCommandBuffer(m_TransferQueues[m_NextTransferQueue * m_UseMultipleQueues], pCommandBuffer, pWaitSemaphore, pWaitStages, waitSemaphoreCount, pSignalSemaphores, signalSemaphoreCount);
-	m_NextTransferQueue = (m_NextTransferQueue + 1) % m_TransferQueues.size();
+	executeCommandBuffer(m_TransferQueues[queueIndex], pCommandBuffer, pWaitSemaphore, pWaitStages, waitSemaphoreCount, pSignalSemaphores, signalSemaphoreCount);
 }
 
 void DeviceVK::waitGraphics()

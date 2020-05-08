@@ -57,8 +57,10 @@ ParticleEmitter::~ParticleEmitter()
     SAFEDELETE(m_pProfiler);
 }
 
-bool ParticleEmitter::initialize(IGraphicsContext* pGraphicsContext, uint32_t frameCount)
+bool ParticleEmitter::initialize(IGraphicsContext* pGraphicsContext, uint32_t frameCount, uint32_t computeQueueIndex)
 {
+    m_ComputeQueueIndex = computeQueueIndex;
+
     size_t particleCount = size_t(m_ParticlesPerSecond * m_ParticleDuration);
     resizeParticleStorage(particleCount);
 
@@ -359,6 +361,11 @@ void ParticleEmitter::saveTimestampsToFile()
 {
     m_pProfiler->writeResults();
     const std::vector<uint64_t>& timestamps = m_pProfiler->getTimestamps();
+
+    // LOG("Emitter Timestamps:");
+    // for (uint64_t timestamp : timestamps) {
+    //     LOG("%lu", (unsigned long long)timestamp);
+    // }
 
     std::ofstream file;
     file.open("results.txt", std::ios::binary | std::ios::out | std::ios::app | std::ios::ate);

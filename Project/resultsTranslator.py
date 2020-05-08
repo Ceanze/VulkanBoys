@@ -2,8 +2,8 @@ from dataclasses import dataclass
 import matplotlib.pyplot as plt
 import numpy as np
 
-emitterCount = 10
-frameCount = 100
+emitterCount = 2
+frameCount = 3
 multipleQueues = True
 
 def visualizeTimeline(emitterTimes):
@@ -20,7 +20,9 @@ def visualizeTimeline(emitterTimes):
 
         barStartY = verticalSpacing * (emitterIdx + 1) + emitterIdx * barHeight
 
-        ax.broken_barh(emitterTimes[emitterIdx], (barStartY, barHeight))
+        #data = {emitterTimes[emitterIdx][0], emitterTimes[emitterIdx][1]}
+        data = emitterTimes[emitterIdx]
+        ax.broken_barh(data, (barStartY, barHeight))
 
     #ax.set_ylim(5, 35)
     #ax.set_xlim(0, 200)
@@ -52,14 +54,16 @@ def getMinMaxTimestamps(emitterValues):
 def fillEmitterTimes(emitterValues, emitterTimes, timestampToMilli, minTimestamp):
     for emitterIdx in range(len(emitterValues)):
         for timestampIdx in range(0, len(emitterValues[emitterIdx]) - 1, 2):
-            if emitterValues[emitterIdx][timestampIdx + 1] < emitterValues[emitterIdx][timestampIdx]:
-                print("1st larger than 2nd: {} vs {}".format(emitterValues[emitterIdx][timestampIdx + 1], emitterValues[emitterIdx][timestampIdx]))
-                #emitterTimes[emitterIdx].append(0)
-            #else:
-            duration = emitterValues[emitterIdx][timestampIdx + 1] - emitterValues[emitterIdx][timestampIdx]
-            duration *= timestampToMilli
-            startTime = emitterValues[emitterIdx][timestampIdx] - minTimestamp
-            startTime *= timestampToMilli
+            timestamp1 = emitterValues[emitterIdx][timestampIdx + 1]
+            timestamp0 = emitterValues[emitterIdx][timestampIdx]
+
+            if timestamp1 < timestamp0:
+                print("1st larger than 2nd: {} vs {}".format(timestamp0, timestamp1))
+
+            duration    = timestamp1 - timestamp0
+            duration    *= timestampToMilli
+            startTime   = timestamp0 - minTimestamp
+            startTime   *= timestampToMilli
             emitterTimes[emitterIdx].append((startTime, duration))
 
 def main():

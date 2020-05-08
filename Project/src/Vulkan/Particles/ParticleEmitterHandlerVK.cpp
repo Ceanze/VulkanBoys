@@ -34,6 +34,7 @@ ParticleEmitterHandlerVK::ParticleEmitterHandlerVK(bool renderingEnabled, uint32
 	m_pCommandPoolGraphics(nullptr),
 	m_pGBufferSampler(nullptr),
 	m_WorkGroupSize(0),
+	m_NextQueueIndex(0),
 	m_CurrentFrame(0),
 	m_FrameCount(frameCount)
 {
@@ -263,7 +264,12 @@ void ParticleEmitterHandlerVK::acquireForCompute(BufferVK* pBuffer, CommandBuffe
 
 void ParticleEmitterHandlerVK::initializeEmitter(ParticleEmitter* pEmitter)
 {
-	pEmitter->initialize(m_pGraphicsContext, m_FrameCount);
+	pEmitter->initialize(m_pGraphicsContext, m_FrameCount, m_NextQueueIndex);
+	LOG("Next: %d", m_NextQueueIndex);
+
+	DeviceVK* pDevice = reinterpret_cast<GraphicsContextVK*>(m_pGraphicsContext)->getDevice();
+	uint32_t computeQueueCount = pDevice->getQueueFamilyIndices().ComputeQueues.value().QueueCount;
+	m_NextQueueIndex = (m_NextQueueIndex + 1) % computeQueueCount;
 
 	// Create descriptor set for the emitter
 	DescriptorSetVK* pEmitterDescriptorSet = m_pDescriptorPool->allocDescriptorSet(m_pDescriptorSetLayoutPerEmitter);
@@ -272,10 +278,10 @@ void ParticleEmitterHandlerVK::initializeEmitter(ParticleEmitter* pEmitter)
 		return;
 	}
 
-	BufferVK* pPositionsBuffer = reinterpret_cast<BufferVK*>(pEmitter->getPositionsBuffer());
-	BufferVK* pVelocitiesBuffer = reinterpret_cast<BufferVK*>(pEmitter->getVelocitiesBuffer());
-	BufferVK* pAgesBuffer = reinterpret_cast<BufferVK*>(pEmitter->getAgesBuffer());
-	BufferVK* pEmitterBuffer = reinterpret_cast<BufferVK*>(pEmitter->getEmitterBuffer());
+	BufferVK* pPositionsBuffer	= reinterpret_cast<BufferVK*>(pEmitter->getPositionsBuffer());
+	BufferVK* pVelocitiesBuffer	= reinterpret_cast<BufferVK*>(pEmitter->getVelocitiesBuffer());
+	BufferVK* pAgesBuffer		= reinterpret_cast<BufferVK*>(pEmitter->getAgesBuffer());
+	BufferVK* pEmitterBuffer	= reinterpret_cast<BufferVK*>(pEmitter->getEmitterBuffer());
 
 	pEmitterDescriptorSet->writeStorageBufferDescriptor(pPositionsBuffer,	POSITIONS_BINDING);
 	pEmitterDescriptorSet->writeStorageBufferDescriptor(pVelocitiesBuffer,	VELOCITIES_BINDING);
@@ -307,6 +313,8 @@ void ParticleEmitterHandlerVK::updateGPU(float dt)
 
 		endUpdateFrame(pEmitter);
     }
+
+	m_CurrentFrame = (m_CurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
 void ParticleEmitterHandlerVK::beginUpdateFrame(ParticleEmitter* pEmitter)
@@ -349,9 +357,7 @@ void ParticleEmitterHandlerVK::endUpdateFrame(ParticleEmitter* pEmitter)
 	GraphicsContextVK* pGraphicsContext = reinterpret_cast<GraphicsContextVK*>(m_pGraphicsContext);
     DeviceVK* pDevice = pGraphicsContext->getDevice();
 
-	pDevice->executeCompute(pCommandBuffer, nullptr, nullptr, 0, nullptr, 0);
-
-	m_CurrentFrame = (m_CurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+	pDevice->executeCompute(pCommandBuffer, nullptr, nullptr, 0, nullptr, 0, pEmitter->getComputeQueueIndex());
 }
 
 bool ParticleEmitterHandlerVK::createCommandPoolAndBuffers()

@@ -48,7 +48,7 @@ public:
     ParticleEmitter(const ParticleEmitterInfo& emitterInfo);
     ~ParticleEmitter();
 
-    bool initialize(IGraphicsContext* pGraphicsContext, uint32_t frameCount);
+    bool initialize(IGraphicsContext* pGraphicsContext, uint32_t frameCount, uint32_t computeQueueIndex);
 
     void update(float dt);
     void updateGPU(float dt);
@@ -83,11 +83,13 @@ public:
     void setDescriptorSetCompute(IDescriptorSet* pDescriptorSet)    { m_pDescriptorSetCompute = pDescriptorSet; }
     void setDescriptorSetRender(IDescriptorSet* pDescriptorSet)     { m_pDescriptorSetRender = pDescriptorSet; }
 
-    IBuffer* getPositionsBuffer() { return m_pPositionsBuffer; }
-    IBuffer* getVelocitiesBuffer() { return m_pVelocitiesBuffer; }
-    IBuffer* getAgesBuffer() { return m_pAgesBuffer; }
-    IBuffer* getEmitterBuffer() { return m_pEmitterBuffer; }
-    ITexture2D* getParticleTexture() { return m_pTexture; }
+    IBuffer* getPositionsBuffer()       { return m_pPositionsBuffer; }
+    IBuffer* getVelocitiesBuffer()      { return m_pVelocitiesBuffer; }
+    IBuffer* getAgesBuffer()            { return m_pAgesBuffer; }
+    IBuffer* getEmitterBuffer()         { return m_pEmitterBuffer; }
+    ITexture2D* getParticleTexture()    { return m_pTexture; }
+
+    inline uint32_t getComputeQueueIndex() { return m_ComputeQueueIndex; }
 
     // Whether or not the emitter's settings (above) have been changed during the current frame
     bool m_EmitterUpdated;
@@ -141,4 +143,6 @@ private:
     IBuffer* m_pVelocitiesBuffer;
     IBuffer* m_pAgesBuffer;
     IBuffer* m_pEmitterBuffer;
+
+    uint32_t m_ComputeQueueIndex;
 };

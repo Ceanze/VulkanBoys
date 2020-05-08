@@ -6,8 +6,8 @@
 // Arg 2: Enable/Disable multiple queues (1 or 0)
 int main(int argc, const char* argv[])
 {
-	size_t emitterCount = 10;
-	size_t frameCount = 100;
+	size_t emitterCount = 2;
+	size_t frameCount = 3;
 	bool multipleQueues = true;
 
 	if (argc > 1) {
