@@ -367,6 +367,15 @@ void ParticleEmitter::saveTimestampsToFile()
     //     LOG("%lu", (unsigned long long)timestamp);
     // }
 
+    //uint64_t first = timestamps[0];
+    //uint32_t counter = 0;
+    //for (uint32_t i = 2; i < timestamps.size(); i+=2) {
+    //    double time = (timestamps[i] - first) * m_pProfiler->getTimestampToMilli();
+    //    LOG("Time: %f", time);
+    //    if (time < 1.0)
+    //        counter++;
+    //}
+
     std::ofstream file;
     file.open("results.txt", std::ios::binary | std::ios::out | std::ios::app | std::ios::ate);
 

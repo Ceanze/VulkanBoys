@@ -25,6 +25,7 @@ public:
     ~ProfilerVK();
 
     const std::vector<uint64_t>& getTimestamps() const { return m_TimeResults; }
+    double getTimestampToMilli() const { return m_TimestampToMillisec; }
     void writeResults();
 
     void setParentProfiler(ProfilerVK* pParentProfiler);

@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 emitterCount = 2
-frameCount = 3
+frameCount = 10
 multipleQueues = True
 
 def visualizeTimeline(emitterTimes):
@@ -67,12 +67,14 @@ def fillEmitterTimes(emitterValues, emitterTimes, timestampToMilli, minTimestamp
             emitterTimes[emitterIdx].append((startTime, duration))
 
 def main():
+    emitterTimes = []
+    for idx in range(emitterCount):
+        emitterTimes.append([])
     emitterValues   = [[]] * emitterCount
-    emitterTimes    = [[]] * emitterCount
 
     # Read values
     file = open("results.txt", "rb")
-    timestampToMilli = np.frombuffer(file.read(8), dtype=np.float)[0]
+    timestampToMilli = np.frombuffer(file.read(8), dtype=np.double)[0]
     for emitterIdx in range(emitterCount):
         emitterValues[emitterIdx] = np.frombuffer(file.read(8 * 2 * frameCount), dtype=np.uint64)
 
