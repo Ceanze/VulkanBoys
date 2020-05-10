@@ -6,11 +6,16 @@ emitterCount = 2
 frameCount = 3
 multipleQueues = True
 
-def visualizeAverageUpdateTimes(times, endParticleCount):
-    return
+def plotLineGraphs(arrays, xlim, title):
+    fig = plt.figure()
 
-def visualizeTotalExecutionTimes(times, endParticleCount):
-    return
+    for array in arrays:
+        plt.plot(array)
+
+    plt.xlim(0, xlim)
+    fig.canvas.set_window_title(title)
+
+    plt.show()
 
 # Each emitter has frameCount * 2 timestamps
 def fillEmitterTimes(emitterValues, emitterTimes, timestampToMilli):
@@ -80,8 +85,8 @@ def main():
 
         particleCount += particleCountIncrement
 
-    visualizeAverageUpdateTimes(averageUpdateTimes, endParticleCount)
-    visualizeTotalExecutionTimes(totalExecutionTimes, endParticleCount)
+    plotLineGraphs(averageUpdateTimes, endParticleCount, "Average Update Times")
+    plotLineGraphs(totalExecutionTimes, endParticleCount, "Total Execution Times")
 
 
 if __name__ == "__main__":
