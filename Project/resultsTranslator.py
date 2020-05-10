@@ -72,12 +72,13 @@ def main():
 
     for testNr in range(testCount):
         startApplication(particleCount)
-        results                = readResultsFile()
-        emitterTimes = results["EmitterTimes"]
+        results         = readResultsFile()
+        emitterTimes    = results["EmitterTimes"]
+
         averageUpdateTimes[testNr]  = calculateAverageUpdateTime(emitterTimes)
         totalExecutionTimes[testNr] = calculateTotalExecutionTime(emitterTimes)
 
-        particleCount   += particleCountIncrement
+        particleCount += particleCountIncrement
 
     visualizeAverageUpdateTimes(averageUpdateTimes, endParticleCount)
     visualizeTotalExecutionTimes(totalExecutionTimes, endParticleCount)
