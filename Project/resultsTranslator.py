@@ -7,13 +7,18 @@ emitterCount = 2
 frameCount = 3
 exePath = ".\\Build\\bin\\Release-windows-x86_64\\VulkanProject\\VulkanProject.exe"
 
-def plotLineGraphs(arrays, xlim, title):
+def plotLineGraphs(yArrays, xlim, labels, title):
     fig = plt.figure()
 
-    for array in arrays:
-        plt.plot(array)
+    for plotNr in range(len(yArrays)):
+        xStepLength = int(xlim / len(yArrays[plotNr]))
+        xticks = range(xStepLength, xlim + xStepLength, xStepLength)
 
-    plt.xlim(0, xlim)
+        plt.plot(xticks, yArrays[plotNr])
+
+    plt.legend(labels)
+    plt.ylabel("Time (ms)")
+    plt.xlabel("Particle Count")
     fig.canvas.set_window_title(title)
 
     plt.show()
@@ -78,7 +83,7 @@ def startApplication(particleCount, multipleQueues):
     return
 
 def main():
-    endParticleCount        = 100000
+    endParticleCount        = 300000
     particleCountIncrement  = 100000
 
     testCount = int(endParticleCount / particleCountIncrement)
@@ -101,8 +106,9 @@ def main():
 
             particleCount += particleCountIncrement
 
-    plotLineGraphs(averageUpdateTimes, endParticleCount, "Average Update Times")
-    plotLineGraphs(totalExecutionTimes, endParticleCount, "Total Execution Times")
+    plotLabels = ["Single Queue", "Multiple Queues"]
+    plotLineGraphs(averageUpdateTimes, endParticleCount, plotLabels, "Average Update Times")
+    plotLineGraphs(totalExecutionTimes, endParticleCount, plotLabels, "Total Execution Times")
 
 
 if __name__ == "__main__":
