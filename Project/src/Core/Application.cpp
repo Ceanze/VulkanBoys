@@ -75,7 +75,7 @@ Application::~Application()
 	s_pInstance = nullptr;
 }
 
-void Application::init(size_t emitterCount, size_t frameCount, bool useMultipleQueues)
+void Application::init(size_t emitterCount, size_t frameCount, bool useMultipleQueues, float particleCount)
 {
 	LOG("Starting application");
 	LOG("Emitters: %d, Frames: %d, Use multiple queues: %d", emitterCount, frameCount, useMultipleQueues);
@@ -143,8 +143,8 @@ void Application::init(size_t emitterCount, size_t frameCount, bool useMultipleQ
 	emitterInfo.direction			= glm::normalize(glm::vec3(0.0f, 0.9f, 0.1f));
 	emitterInfo.particleSize		= glm::vec2(0.1f, 0.1f);
 	emitterInfo.initialSpeed		= 5.5f;
-	emitterInfo.particleDuration	= 3.0f;
-	emitterInfo.particlesPerSecond	= 200.0f;
+	emitterInfo.particleDuration	= 1.0f;
+	emitterInfo.particlesPerSecond	= particleCount;
 	emitterInfo.spread				= glm::quarter_pi<float>() / 1.3f;
 	emitterInfo.pTexture			= m_pParticleTexture;
 

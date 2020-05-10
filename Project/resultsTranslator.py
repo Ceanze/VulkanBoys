@@ -1,9 +1,11 @@
 from dataclasses import dataclass
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
 emitterCount = 2
 frameCount = 3
+exePath = ".\\Build\\bin\\Release-windows-x86_64\\VulkanProject\\VulkanProject.exe"
 
 def plotLineGraphs(arrays, xlim, title):
     fig = plt.figure()
@@ -55,17 +57,28 @@ def readResultsFile():
 
     return results
 
-def calculateTotalExecutionTime(emitterTimes):
-    return 0
-
 def calculateAverageUpdateTime(emitterTimes):
-    return 0
+    # Emitter times:
+    #   - Emitter
+    #       - Tuples of startTime and duration
+    totalDuration = 0.0
+    for emitter in emitterTimes:
+        for time in emitter:
+            totalDuration += time[1]
+
+    average = totalDuration / (len(emitterTimes) * len(emitterTimes[0]))
+    return average
 
 def startApplication(particleCount, multipleQueues):
+    command = "{} {} {} {} {}".format(exePath, emitterCount, frameCount, int(multipleQueues), float(particleCount))
+    print("Executing following command:")
+    print(command)
+    err = os.system(command)
+    print("System finished with code: " + str(err))
     return
 
 def main():
-    endParticleCount        = 5000000
+    endParticleCount        = 100000
     particleCountIncrement  = 100000
 
     testCount = int(endParticleCount / particleCountIncrement)
@@ -84,7 +97,7 @@ def main():
             emitterTimes    = results["EmitterTimes"]
 
             averageUpdateTimes[int(multipleQueues)][testNr]  = calculateAverageUpdateTime(emitterTimes)
-            totalExecutionTimes[int(multipleQueues)][testNr] = calculateTotalExecutionTime(emitterTimes)
+            totalExecutionTimes[int(multipleQueues)][testNr] = results["TotalTime"]
 
             particleCount += particleCountIncrement
 

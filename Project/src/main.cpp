@@ -8,6 +8,7 @@ int main(int argc, const char* argv[])
 {
 	size_t emitterCount = 2;
 	size_t frameCount = 3;
+	float particleCount = 100.0f;
 	bool multipleQueues = true;
 
 	if (argc > 1) {
@@ -22,12 +23,16 @@ int main(int argc, const char* argv[])
 		multipleQueues = std::stoi(argv[3]);
 	}
 
+	if (argc > 4) {
+		particleCount = std::stof(argv[4]);
+	}
+
 #if defined(_DEBUG) && defined(_WIN32)
 	_CrtSetDbgFlag (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
 
 	Application app;
-	app.init(emitterCount, frameCount, multipleQueues);
+	app.init(emitterCount, frameCount, multipleQueues, particleCount);
 	app.run();
 	app.release();
 	return 0;
