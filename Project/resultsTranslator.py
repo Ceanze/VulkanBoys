@@ -6,33 +6,11 @@ emitterCount = 2
 frameCount = 3
 multipleQueues = True
 
-def visualizeTimeline(emitterTimes):
-    yTickLabels = [""] * len(emitterTimes)
+def visualizeAverageUpdateTimes(times, endParticleCount):
+    return
 
-    barHeight = 2
-
-    # Vertical space between each emitter's bar
-    verticalSpacing = 1
-    _, ax = plt.subplots()
-
-    for emitterIdx in range(len(emitterTimes)):
-        yTickLabels[emitterIdx] = "Emitter #{}".format(emitterIdx)
-
-        barStartY = verticalSpacing * (emitterIdx + 1) + emitterIdx * barHeight
-
-        #data = {emitterTimes[emitterIdx][0], emitterTimes[emitterIdx][1]}
-        data = emitterTimes[emitterIdx]
-        ax.broken_barh(data, (barStartY, barHeight))
-
-    #ax.set_ylim(5, 35)
-    #ax.set_xlim(0, 200)
-    ax.set_xlabel('Execution Time (ms)')
-    #ax.set_yticks([15, 25])
-
-    ax.set_yticklabels(yTickLabels)
-    ax.grid(True)
-
-    plt.show()
+def visualizeTotalExecutionTimes(times, endParticleCount):
+    return
 
 # Each emitter has frameCount * 2 timestamps
 
@@ -51,6 +29,8 @@ def visualizeTimeline(emitterTimes):
 
 #     return (minTimestamp, maxTimestamp)
 
+
+
 def fillEmitterTimes(emitterValues, emitterTimes, timestampToMilli):
     for emitterIdx in range(len(emitterValues)):
         minTimestamp = emitterValues[emitterIdx][0]
@@ -67,7 +47,7 @@ def fillEmitterTimes(emitterValues, emitterTimes, timestampToMilli):
             startTime   *= timestampToMilli
             emitterTimes[emitterIdx].append((startTime, duration))
 
-def main():
+def readResultsFile():
     emitterTimes = []
     for _ in range(emitterCount):
         emitterTimes.append([])
@@ -86,9 +66,43 @@ def main():
 
     fillEmitterTimes(emitterValues, emitterTimes, timestampToMilli)
 
-    print(emitterTimes[0])
-    print("Total time: " + str(totalTime))
-    visualizeTimeline(emitterTimes)
+    results = {
+        "TotalTime": totalTime,
+        "EmitterTimes": emitterTimes
+    }
+
+    return results
+
+def calculateTotalExecutionTime(emitterTimes):
+    return 0
+
+def calculateAverageUpdateTime(emitterTimes):
+    return 0
+
+def startApplication(particleCount):
+    return
+
+def main():
+    endParticleCount        = 5000000
+    particleCountIncrement  = 100000
+
+    testCount = endParticleCount / particleCountIncrement
+    averageUpdateTimes  = [] * testCount
+    totalExecutionTimes = [] * testCount
+
+    particleCount = particleCountIncrement
+
+    for testNr in range(testCount):
+        startApplication(particleCount)
+        results                = readResultsFile()
+        emitterTimes = results["EmitterTimes"]
+        averageUpdateTimes[testNr]  = calculateAverageUpdateTime(emitterTimes)
+        totalExecutionTimes[testNr] = calculateTotalExecutionTime(emitterTimes)
+
+        particleCount   += particleCountIncrement
+
+    visualizeAverageUpdateTimes(averageUpdateTimes, endParticleCount)
+    visualizeTotalExecutionTimes(totalExecutionTimes, endParticleCount)
 
 
 if __name__ == "__main__":
