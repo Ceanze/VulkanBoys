@@ -4,7 +4,6 @@ import numpy as np
 
 emitterCount = 2
 frameCount = 3
-multipleQueues = True
 
 def plotLineGraphs(arrays, xlim, title):
     fig = plt.figure()
@@ -62,28 +61,32 @@ def calculateTotalExecutionTime(emitterTimes):
 def calculateAverageUpdateTime(emitterTimes):
     return 0
 
-def startApplication(particleCount):
+def startApplication(particleCount, multipleQueues):
     return
 
 def main():
     endParticleCount        = 5000000
     particleCountIncrement  = 100000
 
-    testCount = endParticleCount / particleCountIncrement
-    averageUpdateTimes  = [] * testCount
-    totalExecutionTimes = [] * testCount
+    testCount = int(endParticleCount / particleCountIncrement)
+    averageUpdateTimes  = [None] * 2
+    totalExecutionTimes = [None] * 2
 
     particleCount = particleCountIncrement
 
-    for testNr in range(testCount):
-        startApplication(particleCount)
-        results         = readResultsFile()
-        emitterTimes    = results["EmitterTimes"]
+    for multipleQueues in [False, True]:
+        averageUpdateTimes[int(multipleQueues)]     = [None] * testCount
+        totalExecutionTimes[int(multipleQueues)]    = [None] * testCount
 
-        averageUpdateTimes[testNr]  = calculateAverageUpdateTime(emitterTimes)
-        totalExecutionTimes[testNr] = calculateTotalExecutionTime(emitterTimes)
+        for testNr in range(testCount):
+            startApplication(particleCount, multipleQueues)
+            results         = readResultsFile()
+            emitterTimes    = results["EmitterTimes"]
 
-        particleCount += particleCountIncrement
+            averageUpdateTimes[int(multipleQueues)][testNr]  = calculateAverageUpdateTime(emitterTimes)
+            totalExecutionTimes[int(multipleQueues)][testNr] = calculateTotalExecutionTime(emitterTimes)
+
+            particleCount += particleCountIncrement
 
     plotLineGraphs(averageUpdateTimes, endParticleCount, "Average Update Times")
     plotLineGraphs(totalExecutionTimes, endParticleCount, "Total Execution Times")
