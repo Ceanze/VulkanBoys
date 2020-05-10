@@ -76,12 +76,13 @@ def main():
     # Read values
     file = open("results.txt", "rb")
     timestampToMilli = np.frombuffer(file.read(8), dtype=np.double)[0]
+    totalTime = np.frombuffer(file.read(8), dtype=np.double)[0]
     for emitterIdx in range(emitterCount):
         emitterValues[emitterIdx] = np.frombuffer(file.read(8 * 2 * frameCount), dtype=np.uint64)
 
     # minMaxGPU = getMinMaxTimestamps(emitterValues)
     # totalTime = (minMaxGPU[1] - minMaxGPU[0]) * timestampToMilli
-    totalTime = (emitterValues[0][emitterCount - 1] - emitterValues[0][0]) * timestampToMilli
+    # totalTime = (emitterValues[0][emitterCount - 1] - emitterValues[0][0]) * timestampToMilli
 
     fillEmitterTimes(emitterValues, emitterTimes, timestampToMilli)
 

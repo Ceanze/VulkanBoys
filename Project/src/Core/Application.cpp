@@ -175,6 +175,8 @@ void Application::run()
 	//HACK to get a non-null deltatime
 	std::this_thread::sleep_for(std::chrono::milliseconds(16));
 
+	auto startTime = std::chrono::high_resolution_clock::now();
+
 	while (m_IsRunning && m_CurrentFrame++ < m_MaxFrames)
 	{
 		lastTime	= currentTime;
@@ -184,6 +186,21 @@ void Application::run()
 
 		update(seconds);
 	}
+
+	reinterpret_cast<GraphicsContextVK*>(m_pContext)->getDevice()->wait();
+
+	auto endTime = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double, std::milli> totalTime = endTime - startTime;
+	double milli = totalTime.count();
+
+	// timestampToMilli is already added
+	std::ofstream file;
+	file.open("results.txt", std::ios::binary | std::ios::out | std::ios::app | std::ios::ate);
+
+	file.write((char*)(&milli), sizeof(double));
+
+	file.close();
+	
 }
 
 void Application::release()
