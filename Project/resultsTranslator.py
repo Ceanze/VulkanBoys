@@ -36,21 +36,6 @@ def visualizeTimeline(emitterTimes):
 
 # Each emitter has frameCount * 2 timestamps
 
-# def getMinMaxTimestamps(emitterValues):
-#     minTimestamp = np.iinfo(np.uint64).max
-#     maxTimestamp = 0
-#     maxDelta = 0
-
-#     for emitterIdx in range(len(emitterValues)):
-#         for i in range(emitterCount):
-#             delta = emitterValues[emitterIdx][frameCount - 1] - emitterValues[i][0]
-#             if delta > maxDelta:
-#                 maxDelta = delta
-#                 minTimestamp = emitterValues[i][0]
-#                 maxTimestamp = emitterValues[emitterIdx][frameCount - 1]
-
-#     return (minTimestamp, maxTimestamp)
-
 def fillEmitterTimes(emitterValues, emitterTimes, timestampToMilli):
     for emitterIdx in range(len(emitterValues)):
         minTimestamp = emitterValues[emitterIdx][0]
@@ -79,10 +64,6 @@ def main():
     totalTime = np.frombuffer(file.read(8), dtype=np.double)[0]
     for emitterIdx in range(emitterCount):
         emitterValues[emitterIdx] = np.frombuffer(file.read(8 * 2 * frameCount), dtype=np.uint64)
-
-    # minMaxGPU = getMinMaxTimestamps(emitterValues)
-    # totalTime = (minMaxGPU[1] - minMaxGPU[0]) * timestampToMilli
-    # totalTime = (emitterValues[0][emitterCount - 1] - emitterValues[0][0]) * timestampToMilli
 
     fillEmitterTimes(emitterValues, emitterTimes, timestampToMilli)
 
