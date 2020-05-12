@@ -269,9 +269,7 @@ void ParticleEmitterHandlerVK::initializeEmitter(ParticleEmitter* pEmitter)
 {
 
 	DeviceVK* pDevice = reinterpret_cast<GraphicsContextVK*>(m_pGraphicsContext)->getDevice();
-	uint32_t computeQueueCount = pDevice->getQueueFamilyIndices().ComputeQueues.value().QueueCount;
-	m_NextQueueIndex = m_UseMultipleQueues ? (m_NextQueueIndex + 1) % computeQueueCount : 0;
-	if (m_IsComputeQueue) {
+	if (m_IsComputeQueue && m_UseMultipleQueues) {
 		pEmitter->initialize(m_pGraphicsContext, m_FrameCount, pDevice->getQueueFamilyIndices().ComputeQueues.value().FamilyIndex, m_NextQueueIndexCompute);
 		LOG("Next: %d", m_NextQueueIndexCompute);
 		uint32_t computeQueueCount = pDevice->getQueueFamilyIndices().ComputeQueues.value().QueueCount;
@@ -281,7 +279,7 @@ void ParticleEmitterHandlerVK::initializeEmitter(ParticleEmitter* pEmitter)
 		pEmitter->initialize(m_pGraphicsContext, m_FrameCount, pDevice->getQueueFamilyIndices().GraphicsQueues.value().FamilyIndex, m_NextQueueIndexGraphics);
 		LOG("Next: %d", m_NextQueueIndexGraphics);
 		uint32_t graphicsQueueCount = pDevice->getQueueFamilyIndices().GraphicsQueues.value().QueueCount;
-		m_NextQueueIndexGraphics = (m_NextQueueIndexGraphics + 1) % graphicsQueueCount;
+		m_NextQueueIndexGraphics = m_UseMultipleQueues ? (m_NextQueueIndexGraphics + 1) % graphicsQueueCount : 0;
 	}
 	m_IsComputeQueue = !m_IsComputeQueue;
 
