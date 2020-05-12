@@ -21,7 +21,10 @@ public:
 	void release();
 
 	VkResult acquireNextImage(VkSemaphore imageSemaphore);
+	VkResult acquireNextImageWaitFence(VkFence waitFence);
+	VkResult acquireNextImageNoWait();
 	VkResult present(VkSemaphore renderSemaphore);
+	VkResult presentNoWait();
 	void resize(uint32_t width, uint32_t height);
 
 	FORCEINLINE ImageVK*		getImage(uint32_t index) const		{ return m_Images[index]; }
