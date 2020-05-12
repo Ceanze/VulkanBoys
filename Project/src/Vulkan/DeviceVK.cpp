@@ -440,7 +440,7 @@ QueueIndices DeviceVK::getQueueFamilyIndex(VkQueueFlagBits queueFlags, const std
 	if (queueFlags & VK_QUEUE_COMPUTE_BIT)
 	{
 		for (uint32_t familyIndex = 0; familyIndex < uint32_t(queueFamilies.size()); familyIndex++) {
-			if (queueFamilies[familyIndex].queueFlags & queueFlags && ((queueFamilies[familyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0)) {
+			if ((queueFamilies[familyIndex].queueFlags & queueFlags) && ((queueFamilies[familyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0)) {
 				return {familyIndex, queueFamilies[familyIndex].queueCount};
 			}
 		}
