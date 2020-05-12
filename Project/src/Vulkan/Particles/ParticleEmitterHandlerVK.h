@@ -77,7 +77,9 @@ private:
     // Work items per work group launched in a compute shader dispatch
     uint32_t m_WorkGroupSize;
 
-    uint32_t m_NextQueueIndex;
+    uint32_t m_NextQueueIndexCompute;
+    uint32_t m_NextQueueIndexGraphics;
+    bool m_IsComputeQueue = true;
 
     uint32_t m_CurrentFrame;
     uint32_t m_FrameCount;

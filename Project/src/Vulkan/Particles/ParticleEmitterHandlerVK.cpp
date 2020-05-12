@@ -34,7 +34,8 @@ ParticleEmitterHandlerVK::ParticleEmitterHandlerVK(bool renderingEnabled, uint32
 	m_pCommandPoolGraphics(nullptr),
 	m_pGBufferSampler(nullptr),
 	m_WorkGroupSize(0),
-	m_NextQueueIndex(0),
+	m_NextQueueIndexCompute(0),
+	m_NextQueueIndexGraphics(0),
 	m_CurrentFrame(0),
 	m_FrameCount(frameCount)
 {
@@ -264,12 +265,21 @@ void ParticleEmitterHandlerVK::acquireForCompute(BufferVK* pBuffer, CommandBuffe
 
 void ParticleEmitterHandlerVK::initializeEmitter(ParticleEmitter* pEmitter)
 {
-	pEmitter->initialize(m_pGraphicsContext, m_FrameCount, m_NextQueueIndex);
-	LOG("Next: %d", m_NextQueueIndex);
 
 	DeviceVK* pDevice = reinterpret_cast<GraphicsContextVK*>(m_pGraphicsContext)->getDevice();
-	uint32_t computeQueueCount = pDevice->getQueueFamilyIndices().ComputeQueues.value().QueueCount;
-	m_NextQueueIndex = (m_NextQueueIndex + 1) % computeQueueCount;
+	if (m_IsComputeQueue) {
+		pEmitter->initialize(m_pGraphicsContext, m_FrameCount, pDevice->getQueueFamilyIndices().ComputeQueues.value().FamilyIndex, m_NextQueueIndexCompute);
+		LOG("Next: %d", m_NextQueueIndexCompute);
+		uint32_t computeQueueCount = pDevice->getQueueFamilyIndices().ComputeQueues.value().QueueCount;
+		m_NextQueueIndexCompute = (m_NextQueueIndexCompute + 1) % computeQueueCount;
+	}
+	else {
+		pEmitter->initialize(m_pGraphicsContext, m_FrameCount, pDevice->getQueueFamilyIndices().GraphicsQueues.value().FamilyIndex, m_NextQueueIndexGraphics);
+		LOG("Next: %d", m_NextQueueIndexGraphics);
+		uint32_t graphicsQueueCount = pDevice->getQueueFamilyIndices().GraphicsQueues.value().QueueCount;
+		m_NextQueueIndexGraphics = (m_NextQueueIndexGraphics + 1) % graphicsQueueCount;
+	}
+	m_IsComputeQueue = !m_IsComputeQueue;
 
 	// Create descriptor set for the emitter
 	DescriptorSetVK* pEmitterDescriptorSet = m_pDescriptorPool->allocDescriptorSet(m_pDescriptorSetLayoutPerEmitter);
@@ -357,7 +367,11 @@ void ParticleEmitterHandlerVK::endUpdateFrame(ParticleEmitter* pEmitter)
 	GraphicsContextVK* pGraphicsContext = reinterpret_cast<GraphicsContextVK*>(m_pGraphicsContext);
     DeviceVK* pDevice = pGraphicsContext->getDevice();
 
-	pDevice->executeCompute(pCommandBuffer, nullptr, nullptr, 0, nullptr, 0, pEmitter->getComputeQueueIndex());
+	// Hardcoded for now that graphics is zero and compute is not
+	if (pEmitter->getFamilyIndex() == 0)
+		pDevice->executeGraphics(pCommandBuffer, nullptr, nullptr, 0, nullptr, 0, pEmitter->getQueueIndex());
+	else
+		pDevice->executeCompute(pCommandBuffer, nullptr, nullptr, 0, nullptr, 0, pEmitter->getQueueIndex());
 }
 
 bool ParticleEmitterHandlerVK::createCommandPoolAndBuffers()

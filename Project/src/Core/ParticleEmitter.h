@@ -48,7 +48,7 @@ public:
     ParticleEmitter(const ParticleEmitterInfo& emitterInfo);
     ~ParticleEmitter();
 
-    bool initialize(IGraphicsContext* pGraphicsContext, uint32_t frameCount, uint32_t computeQueueIndex);
+    bool initialize(IGraphicsContext* pGraphicsContext, uint32_t frameCount, uint32_t queueFamily, uint32_t queueIndex);
 
     void update(float dt);
     void updateGPU(float dt);
@@ -89,7 +89,8 @@ public:
     IBuffer* getEmitterBuffer()         { return m_pEmitterBuffer; }
     ITexture2D* getParticleTexture()    { return m_pTexture; }
 
-    inline uint32_t getComputeQueueIndex() { return m_ComputeQueueIndex; }
+    inline uint32_t getQueueIndex() { return m_QueueIndex; }
+    inline uint32_t getFamilyIndex() { return m_QueueFamily; }
 
     // Whether or not the emitter's settings (above) have been changed during the current frame
     bool m_EmitterUpdated;
@@ -144,5 +145,6 @@ private:
     IBuffer* m_pAgesBuffer;
     IBuffer* m_pEmitterBuffer;
 
-    uint32_t m_ComputeQueueIndex;
+    uint32_t m_QueueIndex;
+    uint32_t m_QueueFamily;
 };

@@ -57,9 +57,10 @@ ParticleEmitter::~ParticleEmitter()
     SAFEDELETE(m_pProfiler);
 }
 
-bool ParticleEmitter::initialize(IGraphicsContext* pGraphicsContext, uint32_t frameCount, uint32_t computeQueueIndex)
+bool ParticleEmitter::initialize(IGraphicsContext* pGraphicsContext, uint32_t frameCount, uint32_t queueFamily, uint32_t queueIndex)
 {
-    m_ComputeQueueIndex = computeQueueIndex;
+    m_QueueIndex = queueIndex;
+    m_QueueFamily = queueFamily;
 
     size_t particleCount = size_t(m_ParticlesPerSecond * m_ParticleDuration);
     resizeParticleStorage(particleCount);
@@ -223,9 +224,9 @@ bool ParticleEmitter::createCommandBuffers(IGraphicsContext* pGraphicsContext)
     GraphicsContextVK* pGraphicsContextVK = reinterpret_cast<GraphicsContextVK*>(pGraphicsContext);
     DeviceVK* pDevice = pGraphicsContextVK->getDevice();
 
-	const uint32_t computeQueueIndex = pDevice->getQueueFamilyIndices().ComputeQueues.value().FamilyIndex;
+    const uint32_t queueIndex = m_QueueFamily; //pDevice->getQueueFamilyIndices().ComputeQueues.value().FamilyIndex;
 	for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-		m_ppCommandPools[i] = DBG_NEW CommandPoolVK(pDevice, computeQueueIndex);
+		m_ppCommandPools[i] = DBG_NEW CommandPoolVK(pDevice, queueIndex);
 
 		if (!m_ppCommandPools[i]->init()) {
 			return false;
