@@ -73,8 +73,17 @@ void SwapChainVK::release()
 
 VkResult SwapChainVK::acquireNextImage(VkSemaphore imageSemaphore)
 {
-	vkAcquireNextImageKHR(m_pDevice->getDevice(), m_SwapChain, UINT64_MAX, imageSemaphore, VK_NULL_HANDLE, &m_ImageIndex);
-	return VK_SUCCESS;
+	return vkAcquireNextImageKHR(m_pDevice->getDevice(), m_SwapChain, UINT64_MAX, imageSemaphore, VK_NULL_HANDLE, &m_ImageIndex);
+}
+
+VkResult SwapChainVK::acquireNextImageWaitFence(VkFence waitFence)
+{
+	return vkAcquireNextImageKHR(m_pDevice->getDevice(), m_SwapChain, UINT64_MAX, VK_NULL_HANDLE, waitFence, &m_ImageIndex);
+}
+
+VkResult SwapChainVK::acquireNextImageNoWait()
+{
+	return vkAcquireNextImageKHR(m_pDevice->getDevice(), m_SwapChain, UINT64_MAX, VK_NULL_HANDLE, VK_NULL_HANDLE, &m_ImageIndex);
 }
 
 VkResult SwapChainVK::present(VkSemaphore renderSemaphore)
@@ -91,8 +100,18 @@ VkResult SwapChainVK::present(VkSemaphore renderSemaphore)
 	presentInfo.pResults			= nullptr;
 	presentInfo.pImageIndices		= &m_ImageIndex;
 
-	vkQueuePresentKHR(m_pDevice->getPresentQueue(), &presentInfo);
-	return VK_SUCCESS;
+	return vkQueuePresentKHR(m_pDevice->getPresentQueue(), &presentInfo);
+}
+
+VkResult SwapChainVK::presentNoWait()
+{
+	VkPresentInfoKHR presentInfo = {};
+	presentInfo.sType				= VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	presentInfo.swapchainCount		= 1;
+	presentInfo.pSwapchains			= &m_SwapChain;
+	presentInfo.pImageIndices		= &m_ImageIndex;
+
+	return vkQueuePresentKHR(m_pDevice->getPresentQueue(), &presentInfo);
 }
 
 void SwapChainVK::resize(uint32_t width, uint32_t height)

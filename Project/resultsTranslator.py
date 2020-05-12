@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-emitterCount = 2
-frameCount = 3
-exePath = ".\\Build\\bin\\Release-windows-x86_64\\VulkanProject\\VulkanProject.exe"
+emitterCount    = 16
+frameCount      = 10000
+exePath         = ".\\Build\\bin\\Release-windows-x86_64\\VulkanProject\\VulkanProject.exe"
 
 def plotLineGraphs(yArrays, xlim, labels, title):
     fig = plt.figure()
@@ -83,8 +83,8 @@ def startApplication(particleCount, multipleQueues):
     return
 
 def main():
-    endParticleCount        = 300000
-    particleCountIncrement  = 100000
+    endParticleCount        = 10000
+    particleCountIncrement  = 10000
 
     testCount = int(endParticleCount / particleCountIncrement)
     averageUpdateTimes  = [None] * 2

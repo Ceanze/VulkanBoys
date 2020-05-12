@@ -362,10 +362,10 @@ void ParticleEmitter::saveTimestampsToFile()
     m_pProfiler->writeResults();
     const std::vector<uint64_t>& timestamps = m_pProfiler->getTimestamps();
 
-    LOG("Emitter Timestamps:");
-    for (uint64_t timestamp : timestamps) {
-        LOG("%lu", (unsigned long long)timestamp);
-    }
+    // LOG("Emitter Timestamps:");
+    // for (uint64_t timestamp : timestamps) {
+    //     LOG("%lu", (unsigned long long)timestamp);
+    // }
 
     //uint64_t first = timestamps[0];
     //uint32_t counter = 0;

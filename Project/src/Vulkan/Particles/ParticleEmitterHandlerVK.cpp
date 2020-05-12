@@ -5,6 +5,7 @@
 #include "Common/Debug.h"
 #include "Common/IGraphicsContext.h"
 #include "Common/IShader.h"
+#include "Core/TaskDispatcher.h"
 #include "Vulkan/BufferVK.h"
 #include "Vulkan/CommandPoolVK.h"
 #include "Vulkan/CommandBufferVK.h"
@@ -25,7 +26,7 @@
 #define AGES_BINDING        	2
 #define EMITTER_BINDING     	3
 
-ParticleEmitterHandlerVK::ParticleEmitterHandlerVK(bool renderingEnabled, uint32_t frameCount)
+ParticleEmitterHandlerVK::ParticleEmitterHandlerVK(bool renderingEnabled, uint32_t frameCount, bool useMultipleQueues)
 	:ParticleEmitterHandler(renderingEnabled),
 	m_pDescriptorPool(nullptr),
 	m_pDescriptorSetLayoutPerEmitter(nullptr),
@@ -36,7 +37,8 @@ ParticleEmitterHandlerVK::ParticleEmitterHandlerVK(bool renderingEnabled, uint32
 	m_WorkGroupSize(0),
 	m_NextQueueIndex(0),
 	m_CurrentFrame(0),
-	m_FrameCount(frameCount)
+	m_FrameCount(frameCount),
+	m_UseMultipleQueues(useMultipleQueues)
 {
     for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         m_ppCommandPools[i] = nullptr;
@@ -269,7 +271,7 @@ void ParticleEmitterHandlerVK::initializeEmitter(ParticleEmitter* pEmitter)
 
 	DeviceVK* pDevice = reinterpret_cast<GraphicsContextVK*>(m_pGraphicsContext)->getDevice();
 	uint32_t computeQueueCount = pDevice->getQueueFamilyIndices().ComputeQueues.value().QueueCount;
-	m_NextQueueIndex = (m_NextQueueIndex + 1) % computeQueueCount;
+	m_NextQueueIndex = m_UseMultipleQueues ? (m_NextQueueIndex + 1) % computeQueueCount : 0;
 
 	// Create descriptor set for the emitter
 	DescriptorSetVK* pEmitterDescriptorSet = m_pDescriptorPool->allocDescriptorSet(m_pDescriptorSetLayoutPerEmitter);
@@ -294,27 +296,36 @@ void ParticleEmitterHandlerVK::initializeEmitter(ParticleEmitter* pEmitter)
 void ParticleEmitterHandlerVK::updateGPU(float dt)
 {
 	for (ParticleEmitter* pEmitter : m_ParticleEmitters) {
-		CommandBufferVK* pCommandBuffer = pEmitter->getCommandBuffer(m_CurrentFrame);
-		beginUpdateFrame(pEmitter);
-
-		// Update push-constant
-		PushConstant pushConstant = {dt};
-		pCommandBuffer->pushConstants(m_pPipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(PushConstant), (const void*)&pushConstant);
-
-		pEmitter->updateGPU(dt);
-
-		DescriptorSetVK* pDescriptorSet = reinterpret_cast<DescriptorSetVK*>(pEmitter->getDescriptorSetCompute());
-		pCommandBuffer->bindDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, m_pPipelineLayout, 0, 1, &pDescriptorSet, 0, nullptr);
-
-		uint32_t particleCount = pEmitter->getParticleCount();
-		glm::u32vec3 workGroupSize(1 + particleCount / m_WorkGroupSize, 1, 1);
-
-		pCommandBuffer->dispatch(workGroupSize);
-
-		endUpdateFrame(pEmitter);
+		TaskDispatcher::execute([dt, this, pEmitter]
+		{
+			updateEmitter(pEmitter, dt);
+		});
     }
 
+	TaskDispatcher::waitForTasks();
 	m_CurrentFrame = (m_CurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+}
+
+void ParticleEmitterHandlerVK::updateEmitter(ParticleEmitter* pEmitter, float dt)
+{
+	CommandBufferVK* pCommandBuffer = pEmitter->getCommandBuffer(m_CurrentFrame);
+	beginUpdateFrame(pEmitter);
+
+	// Update push-constant
+	PushConstant pushConstant = {dt};
+	pCommandBuffer->pushConstants(m_pPipelineLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(PushConstant), (const void*)&pushConstant);
+
+	pEmitter->updateGPU(dt);
+
+	DescriptorSetVK* pDescriptorSet = reinterpret_cast<DescriptorSetVK*>(pEmitter->getDescriptorSetCompute());
+	pCommandBuffer->bindDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, m_pPipelineLayout, 0, 1, &pDescriptorSet, 0, nullptr);
+
+	uint32_t particleCount = pEmitter->getParticleCount();
+	glm::u32vec3 workGroupSize(1 + particleCount / m_WorkGroupSize, 1, 1);
+
+	pCommandBuffer->dispatch(workGroupSize);
+
+	endUpdateFrame(pEmitter);
 }
 
 void ParticleEmitterHandlerVK::beginUpdateFrame(ParticleEmitter* pEmitter)

@@ -27,10 +27,12 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "LightSetup.h"
-#include "Vulkan/RenderPassVK.h"
+
 #include "Vulkan/CommandPoolVK.h"
-#include "Vulkan/GraphicsContextVK.h"
 #include "Vulkan/DescriptorSetLayoutVK.h"
+#include "Vulkan/GraphicsContextVK.h"
+#include "Vulkan/RenderPassVK.h"
+#include "Vulkan/SwapChainVK.h"
 
 #ifdef max
 	#undef max
@@ -92,33 +94,8 @@ void Application::init(size_t emitterCount, size_t frameCount, bool useMultipleQ
 		m_pWindow->setFullscreenState(false);
 	}
 
-	// Create input
-	m_pInputHandler = IInputHandler::create();
-	Input::setInputHandler(m_pInputHandler);
-	m_pWindow->addEventHandler(m_pInputHandler);
-
 	// Create context
 	m_pContext = IGraphicsContext::create(m_pWindow, API::VULKAN, useMultipleQueues);
-
-	m_pContext->setRayTracingEnabled(!FORCE_RAY_TRACING_OFF);
-
-	// Create and setup rendering handler
-	m_pRenderingHandler = m_pContext->createRenderingHandler();
-	m_pRenderingHandler->initialize();
-	m_pRenderingHandler->setClearColor(0.0f, 0.0f, 0.0f);
-	m_pRenderingHandler->setViewport((float)m_pWindow->getWidth(), (float)m_pWindow->getHeight(), 0.0f, 1.0f, 0.0f, 0.0f);
-
-	// Create Scene
-	m_pScene = m_pContext->createScene(m_pRenderingHandler);
-	m_pScene->init();
-
-	m_pRenderingHandler->setScene(m_pScene);
-
-	// Setup renderers
-	// Setup Imgui
-	m_pImgui = m_pContext->createImgui();
-	m_pImgui->init();
-	m_pWindow->addEventHandler(m_pImgui);
 
 	// Create particlehandler
 	m_pParticleEmitterHandler = m_pContext->createParticleEmitterHandler(RENDERING_ENABLED, (uint32_t)frameCount);
@@ -126,17 +103,6 @@ void Application::init(size_t emitterCount, size_t frameCount, bool useMultipleQ
 
 	// Switch to GPU
 	m_pParticleEmitterHandler->toggleComputationDevice();
-	m_pRenderingHandler->setParticleEmitterHandler(m_pParticleEmitterHandler);
-
-	m_pRenderingHandler->setClearColor(0.0f, 0.0f, 0.0f);
-
-	// Setup particles
-	m_pParticleTexture = m_pContext->createTexture2D();
-	if (!m_pParticleTexture->initFromFile("assets/textures/sun.png", ETextureFormat::FORMAT_R8G8B8A8_UNORM, true))
-	{
-		LOG("Failed to create particle texture");
-		SAFEDELETE(m_pParticleTexture);
-	}
 
 	ParticleEmitterInfo emitterInfo = {};
 	emitterInfo.position			= glm::vec3(0.0f, 0.0f, 0.0f);
@@ -153,21 +119,21 @@ void Application::init(size_t emitterCount, size_t frameCount, bool useMultipleQ
 		m_pParticleEmitterHandler->createEmitter(emitterInfo);
 	}
 
-	//Setup camera
-	m_Camera.setDirection(glm::vec3(0.0f, 0.0f, 1.0f));
-	m_Camera.setPosition(glm::vec3(0.0f, 1.0f, -3.0f));
-	m_Camera.setProjection(90.0f, (float)m_pWindow->getWidth(), (float)m_pWindow->getHeight(), 0.0001f, 50.0f);
-	m_Camera.update();
-
 	TaskDispatcher::waitForTasks();
-	m_pWindow->show();
-	m_pScene->finalize();
-	m_pRenderingHandler->onSceneUpdated(m_pScene);
 }
 
 void Application::run()
 {
-	m_IsRunning = true;
+	GraphicsContextVK* pGraphicsContext	= reinterpret_cast<GraphicsContextVK*>(m_pContext);
+	SwapChainVK* pSwapChain				= pGraphicsContext->getSwapChain();
+	DeviceVK* pDevice					= pGraphicsContext->getDevice();
+
+	VkFenceCreateInfo fenceInfo = {};
+	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+	VkFence imageWaitFence = VK_NULL_HANDLE;
+	vkCreateFence(pDevice->getDevice(), &fenceInfo, nullptr, &imageWaitFence);
 
 	auto currentTime	= std::chrono::high_resolution_clock::now();
 	auto lastTime		= currentTime;
@@ -177,14 +143,20 @@ void Application::run()
 
 	auto startTime = std::chrono::high_resolution_clock::now();
 
-	while (m_IsRunning && m_CurrentFrame++ < m_MaxFrames)
+	while (m_CurrentFrame++ < m_MaxFrames)
+	//while (true)
 	{
+		//pSwapChain->acquireNextImageWaitFence(imageWaitFence);
+
 		lastTime	= currentTime;
 		currentTime = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double, std::milli> deltatime = currentTime - lastTime;
 		double seconds = deltatime.count() / 1000.0;
 
 		update(seconds);
+
+		pDevice->wait();
+		//pSwapChain->presentNoWait();
 	}
 
 	reinterpret_cast<GraphicsContextVK*>(m_pContext)->getDevice()->wait();
@@ -200,7 +172,6 @@ void Application::run()
 	file.write((char*)(&milli), sizeof(double));
 
 	file.close();
-	
 }
 
 void Application::release()
