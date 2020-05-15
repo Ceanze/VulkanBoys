@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-emitterCount = 16
+emitterCount = 8
 frameCount = 100
 exePath = ".\\Build\\bin\\Release-windows-x86_64\\VulkanProject\\VulkanProject.exe"
 
@@ -83,32 +83,34 @@ def startApplication(particleCount, multipleQueues, multipleFamilies, useCompute
     return
 
 def main():
-    endParticleCount        = 5000
-    particleCountIncrement  = 1000
-    multipleFamilies = False
+    endParticleCount        = 100000
+    particleCountIncrement  = 10000
     useComputeQueue = True
 
     testCount = int(endParticleCount / particleCountIncrement)
-    averageUpdateTimes  = [None] * 2
-    totalExecutionTimes = [None] * 2
+    averageUpdateTimes  = [None] * 3
+    totalExecutionTimes = [None] * 3
 
     particleCount = particleCountIncrement
 
-    for multipleQueues in [False, True]:
-        averageUpdateTimes[int(multipleQueues)]     = [None] * testCount
-        totalExecutionTimes[int(multipleQueues)]    = [None] * testCount
+    multipleQueuesTest   = [False, True, True]
+    multipleFamiliesTest = [False, False, True]
+
+    for test in range(3):
+        averageUpdateTimes[int(test)]     = [None] * testCount
+        totalExecutionTimes[int(test)]    = [None] * testCount
 
         for testNr in range(testCount):
-            startApplication(particleCount, multipleQueues, multipleFamilies, useComputeQueue)
+            startApplication(particleCount, multipleQueuesTest[test], multipleFamiliesTest[test], useComputeQueue)
             results         = readResultsFile()
             emitterTimes    = results["EmitterTimes"]
 
-            averageUpdateTimes[int(multipleQueues)][testNr]  = calculateAverageUpdateTime(emitterTimes)
-            totalExecutionTimes[int(multipleQueues)][testNr] = results["TotalTime"]
+            averageUpdateTimes[int(test)][testNr]  = calculateAverageUpdateTime(emitterTimes)
+            totalExecutionTimes[int(test)][testNr] = results["TotalTime"]
 
             particleCount += particleCountIncrement
 
-    plotLabels = ["Single Queue", "Multiple Queues"]
+    plotLabels = ["Single Queue", "Multiple Queues", "Multiple Families"]
     plotLineGraphs(averageUpdateTimes, endParticleCount, plotLabels, "Average Update Times")
     plotLineGraphs(totalExecutionTimes, endParticleCount, plotLabels, "Total Execution Times")
 
