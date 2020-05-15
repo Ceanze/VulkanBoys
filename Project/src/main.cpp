@@ -1,9 +1,12 @@
 #include "Common/Debug.h"
 #include "Core/Application.h"
 
-// Arg 0: Emitter count
-// Arg 1: Frame count
-// Arg 2: Enable/Disable multiple queues (1 or 0)
+// Arg 1: Emitter count
+// Arg 2: Frame count
+// Arg 3: Enable/Disable multiple queues (1 or 0)
+// Arg 4: Particles per emitter
+// Arg 5: Use multiple queue families
+// Arg 6: Only use async compute queue family
 int main(int argc, const char* argv[])
 {
 	size_t emitterCount = 2;
