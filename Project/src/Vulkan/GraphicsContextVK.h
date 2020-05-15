@@ -14,7 +14,7 @@ class GraphicsContextVK : public IGraphicsContext
 public:
 	DECL_NO_COPY(GraphicsContextVK);
 
-	GraphicsContextVK(IWindow* pWindow, bool useMultipleQueues);
+	GraphicsContextVK(IWindow* pWindow, bool useMultipleQueues, bool useMultipleFamilies, bool useComputeQueue);
 	~GraphicsContextVK();
 
 	void init();
@@ -58,4 +58,6 @@ private:
 
 	bool m_RayTracingEnabled;
 	bool m_UseMultipleQueues;
+	bool m_UseMultipleFamilies;
+	bool m_UseComputeQueue;
 };

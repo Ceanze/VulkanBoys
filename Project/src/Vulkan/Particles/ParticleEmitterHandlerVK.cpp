@@ -26,7 +26,7 @@
 #define AGES_BINDING        	2
 #define EMITTER_BINDING     	3
 
-ParticleEmitterHandlerVK::ParticleEmitterHandlerVK(bool renderingEnabled, uint32_t frameCount, bool useMultipleQueues)
+ParticleEmitterHandlerVK::ParticleEmitterHandlerVK(bool renderingEnabled, uint32_t frameCount, bool useMultipleQueues, bool useMultipleFamilies, bool useComputeFamily)
 	:ParticleEmitterHandler(renderingEnabled),
 	m_pDescriptorPool(nullptr),
 	m_pDescriptorSetLayoutPerEmitter(nullptr),
@@ -39,7 +39,9 @@ ParticleEmitterHandlerVK::ParticleEmitterHandlerVK(bool renderingEnabled, uint32
 	m_NextQueueIndexGraphics(0),
 	m_CurrentFrame(0),
 	m_FrameCount(frameCount),
-	m_UseMultipleQueues(useMultipleQueues)
+	m_UseMultipleQueues(useMultipleQueues),
+	m_UseMultipleFamilies(useMultipleFamilies),
+	m_UseComputeFamiliy(useComputeFamily)
 {
     for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         m_ppCommandPools[i] = nullptr;
@@ -267,13 +269,12 @@ void ParticleEmitterHandlerVK::acquireForCompute(BufferVK* pBuffer, CommandBuffe
 
 void ParticleEmitterHandlerVK::initializeEmitter(ParticleEmitter* pEmitter)
 {
-
 	DeviceVK* pDevice = reinterpret_cast<GraphicsContextVK*>(m_pGraphicsContext)->getDevice();
-	if (m_IsComputeQueue && m_UseMultipleQueues) {
+	if ((m_IsComputeQueue && m_UseMultipleFamilies) || (m_UseComputeFamiliy && !m_UseMultipleFamilies)) {
 		pEmitter->initialize(m_pGraphicsContext, m_FrameCount, pDevice->getQueueFamilyIndices().ComputeQueues.value().FamilyIndex, m_NextQueueIndexCompute);
 		LOG("Next: %d", m_NextQueueIndexCompute);
 		uint32_t computeQueueCount = pDevice->getQueueFamilyIndices().ComputeQueues.value().QueueCount;
-		m_NextQueueIndexCompute = (m_NextQueueIndexCompute + 1) % computeQueueCount;
+		m_NextQueueIndexCompute = m_UseMultipleQueues ? (m_NextQueueIndexCompute + 1) % computeQueueCount : 0;
 	}
 	else {
 		pEmitter->initialize(m_pGraphicsContext, m_FrameCount, pDevice->getQueueFamilyIndices().GraphicsQueues.value().FamilyIndex, m_NextQueueIndexGraphics);

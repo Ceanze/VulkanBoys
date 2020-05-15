@@ -21,13 +21,15 @@
 
 #include "Core/GLFWWindow.h"
 
-GraphicsContextVK::GraphicsContextVK(IWindow* pWindow, bool useMultipleQueues)
+GraphicsContextVK::GraphicsContextVK(IWindow* pWindow, bool useMultipleQueues, bool useMultipleFamilies, bool useComputeQueue)
 	: m_pWindow(pWindow),
 	m_pSwapChain(nullptr),
 	m_Device(),
 	m_Instance(),
 	m_RayTracingEnabled(false),
-	m_UseMultipleQueues(useMultipleQueues)
+	m_UseMultipleQueues(useMultipleQueues),
+	m_UseMultipleFamilies(useMultipleFamilies),
+	m_UseComputeQueue(useComputeQueue)
 {}
 
 GraphicsContextVK::~GraphicsContextVK()
@@ -88,7 +90,7 @@ IRenderer* GraphicsContextVK::createParticleRenderer(RenderingHandler* pRenderin
 
 ParticleEmitterHandler* GraphicsContextVK::createParticleEmitterHandler(bool renderingEnabled, uint32_t frameCount)
 {
-	return DBG_NEW ParticleEmitterHandlerVK(renderingEnabled, frameCount, m_UseMultipleQueues);
+	return DBG_NEW ParticleEmitterHandlerVK(renderingEnabled, frameCount, m_UseMultipleQueues, m_UseMultipleFamilies, m_UseComputeQueue);
 }
 
 IImgui* GraphicsContextVK::createImgui()

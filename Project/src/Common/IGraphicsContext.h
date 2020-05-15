@@ -55,5 +55,5 @@ public:
 	virtual bool isRayTracingEnabled() const = 0;
 
 public:
-	static IGraphicsContext* create(IWindow* pWindow, API api, bool useMultipleQueues);
+	static IGraphicsContext* create(IWindow* pWindow, API api, bool useMultipleQueues, bool useMultipleFamilies, bool useComputeQueue);
 };

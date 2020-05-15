@@ -46,7 +46,7 @@ public:
 
 	DECL_NO_COPY(Application);
 
-	void init(size_t emitterCount, size_t frameCount, bool useMultipleQueues, float particleCount);
+	void init(size_t emitterCount, size_t frameCount, bool useMultipleQueues, float particleCount, bool useMultipleFamilies, bool useComputeQueue);
 	void run();
 	void release();
 

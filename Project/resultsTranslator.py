@@ -74,8 +74,8 @@ def calculateAverageUpdateTime(emitterTimes):
     average = totalDuration / (len(emitterTimes) * len(emitterTimes[0]))
     return average
 
-def startApplication(particleCount, multipleQueues):
-    command = "{} {} {} {} {}".format(exePath, emitterCount, frameCount, int(multipleQueues), float(particleCount))
+def startApplication(particleCount, multipleQueues, multipleFamilies, useComputeQueue):
+    command = "{} {} {} {} {} {} {}".format(exePath, emitterCount, frameCount, int(multipleQueues), float(particleCount), int(multipleFamilies), int(useComputeQueue))
     print("Executing following command:")
     print(command)
     err = os.system(command)
@@ -83,8 +83,10 @@ def startApplication(particleCount, multipleQueues):
     return
 
 def main():
-    endParticleCount        = 1000000
-    particleCountIncrement  = 100000
+    endParticleCount        = 5000
+    particleCountIncrement  = 1000
+    multipleFamilies = False
+    useComputeQueue = True
 
     testCount = int(endParticleCount / particleCountIncrement)
     averageUpdateTimes  = [None] * 2
@@ -97,7 +99,7 @@ def main():
         totalExecutionTimes[int(multipleQueues)]    = [None] * testCount
 
         for testNr in range(testCount):
-            startApplication(particleCount, multipleQueues)
+            startApplication(particleCount, multipleQueues, multipleFamilies, useComputeQueue)
             results         = readResultsFile()
             emitterTimes    = results["EmitterTimes"]
 

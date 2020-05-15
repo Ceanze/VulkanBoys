@@ -26,7 +26,7 @@ struct ParticleStorage;
 class ParticleEmitterHandlerVK : public ParticleEmitterHandler
 {
 public:
-    ParticleEmitterHandlerVK(bool renderingEnabled, uint32_t frameCount, bool useMultipleQueues);
+    ParticleEmitterHandlerVK(bool renderingEnabled, uint32_t frameCount, bool useMultipleQueues, bool useMultipleFamilies, bool useComputeFamiliy);
     ~ParticleEmitterHandlerVK();
 
     virtual void update(float dt) override;
@@ -81,6 +81,8 @@ private:
     uint32_t m_NextQueueIndexCompute;
     uint32_t m_NextQueueIndexGraphics;
     bool m_IsComputeQueue = true;
+    bool m_UseMultipleFamilies = true;
+    bool m_UseComputeFamiliy = true;
 
     uint32_t m_CurrentFrame;
     uint32_t m_FrameCount;

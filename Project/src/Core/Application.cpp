@@ -77,7 +77,7 @@ Application::~Application()
 	s_pInstance = nullptr;
 }
 
-void Application::init(size_t emitterCount, size_t frameCount, bool useMultipleQueues, float particleCount)
+void Application::init(size_t emitterCount, size_t frameCount, bool useMultipleQueues, float particleCount, bool useMultipleFamilies, bool useComputeQueue)
 {
 	LOG("Starting application");
 	LOG("Emitters: %d, Frames: %d, Use multiple queues: %d", emitterCount, frameCount, useMultipleQueues);
@@ -95,7 +95,7 @@ void Application::init(size_t emitterCount, size_t frameCount, bool useMultipleQ
 	}
 
 	// Create context
-	m_pContext = IGraphicsContext::create(m_pWindow, API::VULKAN, useMultipleQueues);
+	m_pContext = IGraphicsContext::create(m_pWindow, API::VULKAN, useMultipleQueues, useMultipleFamilies, useComputeQueue);
 
 	// Create particlehandler
 	m_pParticleEmitterHandler = m_pContext->createParticleEmitterHandler(RENDERING_ENABLED, (uint32_t)frameCount);
