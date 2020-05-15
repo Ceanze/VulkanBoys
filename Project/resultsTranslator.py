@@ -17,6 +17,7 @@ def plotLineGraphs(yArrays, xlim, labels, title):
         plt.plot(xticks, yArrays[plotNr])
 
     plt.legend(labels)
+    plt.title(title)
     plt.ylabel("Time (ms)")
     plt.xlabel("Particle Count")
     fig.canvas.set_window_title(title)
